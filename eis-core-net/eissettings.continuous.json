@@ -9,7 +9,7 @@
       "ApplicationSettings": [{
         "Name":"FLYING_PROCESS",      
         "OutboundTopic": "topic.outbound.flying.activity",
-        "InboundTopic": "topic.inbound.flying.activity"
+        "InboundQueue": "topic.outbound.flying.activity::queue.inbound.flying.activity"
       }]
     
 }

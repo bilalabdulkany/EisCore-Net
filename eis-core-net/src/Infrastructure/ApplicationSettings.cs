@@ -4,7 +4,7 @@ namespace EisCore.Model
     {        
             public string Name{get;set;}
             public string OutboundTopic{get;set;}
-            public string InboundTopic {get;set;}
+            public string InboundQueue {get;set;}
          
     }
 }

@@ -9,12 +9,12 @@
       "ApplicationSettings": [{
         "Name":"FLYING_PROCESS",      
         "OutboundTopic": "topic.outbound.flying.activity",
-        "InboundTopic": "topic.inbound.flying.activity"
+        "InboundQueue": "topic.outbound.flying.activity::queue.inbound.flying.activity"
       },
       {
         "Name":"MDM",      
         "OutboundTopic": "topic.outbound.mdm",
-        "InboundTopic": "topic.outbound.mdm::queue.inbound.mdm"
+        "InboundQueue": "topic.outbound.mdm::queue.inbound.mdm"
       }
     ]
     

@@ -41,7 +41,7 @@ namespace EisCore
                 if (_session == null) { throw new Exception("Session cannot be created"); }
             }
             var topic = _configManager.GetAppSettings().OutboundTopic;
-            _destination = SessionUtil.GetDestination(_session, topic);
+            _destination = SessionUtil.GetTopic(_session, topic);
             _log.LogInformation("Destination Topic: {d}", _destination);
             //this.producer = _session.CreateProducer(destination); //new SenderLink(session, "sender-link", topic);
 

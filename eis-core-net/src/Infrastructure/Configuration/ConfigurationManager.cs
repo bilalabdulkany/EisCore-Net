@@ -78,7 +78,7 @@ namespace EisCore.Configuration
                 // TcpConnection.ExceptionListener += new ExceptionListener(OnExceptionListener);
 
 
-                TcpSession = TcpConnection.CreateSession();
+                TcpSession = TcpConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
 
                 this._brokerConfiguration.connection = TcpConnection;
                 this._brokerConfiguration.session = TcpSession;

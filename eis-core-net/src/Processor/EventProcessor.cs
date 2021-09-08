@@ -32,25 +32,21 @@ namespace EisCore
 
         public EventProcessor(ILogger<EventProcessor> log, IConfigurationManager configurationManager)
         {
-
             this._log = log;
             this._configManager = configurationManager;
             this._appSettings = configurationManager.GetAppSettings();
-            var Queue = this._appSettings.OutboundTopic + "::" + this._appSettings.InboundTopic;
-            //------------------------          
-
+            
             _log.LogInformation("EventProcessor constructor");
             _session = _configManager.GetBrokerConfiguration().session;
             _connection = _configManager.GetBrokerConfiguration().connection;
             if (_session == null || _connection == null)
             {
-                
                 _log.LogInformation("TCP Session not available, creating one..");
                 //
                 if (_session == null) { throw new Exception("Session cannot be created"); }
             }
-            var topicAndQueue = this._appSettings.InboundTopic;
-            _destination = SessionUtil.GetDestination(_session, topicAndQueue);
+            var Queue = this._appSettings.InboundQueue;
+            _destination = SessionUtil.GetQueue(_session, Queue);
             _log.LogInformation("Destination Topic: {d}", _destination);
             //this.producer = _session.CreateProducer(destination); //new SenderLink(session, "sender-link", topic);
             IMessageConsumer consumer = _session.CreateConsumer(_destination);
@@ -60,24 +56,29 @@ namespace EisCore
 
         public void RunConsumerEventListener()
         {
-            _log.LogInformation("Starting listener");
-           
+            _log.LogInformation("Starting listener"); 
             _connection.Start();
             _consumer.Listener += new MessageListener(OnMessage);
-
         }
 
         protected void OnMessage(IMessage receivedMsg)
-        {
-            Console.WriteLine("Receiving the message inside OnMessage");
+        {    
+            try{
+            _log.LogInformation("Receiving the message inside OnMessage");
             queueMessage = receivedMsg as ITextMessage;
 
-            Console.WriteLine("Received message with ID:   " + queueMessage.NMSMessageId);
-            Console.WriteLine("Received message with text: " + queueMessage.Text);
+            _log.LogInformation("Received message with ID: {n}  ", queueMessage.NMSMessageId);
+             _log.LogInformation("Received message with text: {n}  ", queueMessage.Text);
 
             EisEvent eisEvent = JsonSerializer.Deserialize<EisEvent>(queueMessage.Text);
             _log.LogInformation("Receiving the message: {eisEvent}", eisEvent.ToString());
-
+            receivedMsg.Acknowledge();
+            //_consumer.Close();
+            } catch(Exception ex) {
+                receivedMsg.Acknowledge();
+                _log.LogError("exception in onMessage: {eisEvent}", ex.StackTrace);
+                throw ex;
+            }
         }
 
 
