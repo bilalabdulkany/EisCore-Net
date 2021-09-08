@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>      
+   <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- <TargetFramework>net5.0</TargetFramework> -->
+    <RootNamespace>EisCore</RootNamespace>
+     <!-- <OutputType>Exe</OutputType> -->
+    <!--<LangVersion>9.0</LangVersion>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+  
+     <PackageReference Include="Apache.NMS.ActiveMQ" Version="1.7.2" />
+  
+     <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
+  
+     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="5.0.0" />
+  
+     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="5.0.0" />
+  
+     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
+  
+     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+
+  </ItemGroup>
+
+    <ItemGroup>
+    <EmbeddedResource Include="eissettings.json" />
+    <EmbeddedResource Include="eissettings.continuous.json" />
+  </ItemGroup>
+
+
+</Project>

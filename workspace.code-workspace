@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "eis-core-net"
+		},
+		{
+			"path": "event-consumer-net"
+		},
+		{
+			"path": "event-publisher-net"
+		}
+	],
+	"settings": {}
+}

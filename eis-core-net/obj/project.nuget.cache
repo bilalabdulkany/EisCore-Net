@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "dgSpecHash": "IXodVpiv2wvTs3lW9/Iw0DbR0BtxI3c433egWAbGvXOU9t4ghIcZ8hGuaprluag92PJfsFhOdlp/SnU6GosSAg==",
+  "success": true,
+  "projectFilePath": "D:\\Bilal\\Project Folder\\eis-core-net\\eis-core-net.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\apache.nms\\1.7.1\\apache.nms.1.7.1.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\apache.nms.activemq\\1.7.2\\apache.nms.activemq.1.7.2.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\5.0.0\\microsoft.bcl.asyncinterfaces.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.configuration\\5.0.0\\microsoft.extensions.configuration.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\5.0.0\\microsoft.extensions.configuration.abstractions.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.configuration.binder\\5.0.0\\microsoft.extensions.configuration.binder.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.configuration.commandline\\5.0.0\\microsoft.extensions.configuration.commandline.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.configuration.environmentvariables\\5.0.0\\microsoft.extensions.configuration.environmentvariables.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.configuration.fileextensions\\5.0.0\\microsoft.extensions.configuration.fileextensions.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.configuration.json\\5.0.0\\microsoft.extensions.configuration.json.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.configuration.usersecrets\\5.0.0\\microsoft.extensions.configuration.usersecrets.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\5.0.0\\microsoft.extensions.dependencyinjection.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\5.0.0\\microsoft.extensions.dependencyinjection.abstractions.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.fileproviders.abstractions\\5.0.0\\microsoft.extensions.fileproviders.abstractions.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.fileproviders.physical\\5.0.0\\microsoft.extensions.fileproviders.physical.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.filesystemglobbing\\5.0.0\\microsoft.extensions.filesystemglobbing.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.hosting\\5.0.0\\microsoft.extensions.hosting.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.hosting.abstractions\\5.0.0\\microsoft.extensions.hosting.abstractions.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.logging\\5.0.0\\microsoft.extensions.logging.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\5.0.0\\microsoft.extensions.logging.abstractions.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.logging.configuration\\5.0.0\\microsoft.extensions.logging.configuration.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.logging.console\\5.0.0\\microsoft.extensions.logging.console.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.logging.debug\\5.0.0\\microsoft.extensions.logging.debug.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.logging.eventlog\\5.0.0\\microsoft.extensions.logging.eventlog.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.logging.eventsource\\5.0.0\\microsoft.extensions.logging.eventsource.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.options\\5.0.0\\microsoft.extensions.options.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.options.configurationextensions\\5.0.0\\microsoft.extensions.options.configurationextensions.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.extensions.primitives\\5.0.0\\microsoft.extensions.primitives.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\microsoft.netcore.platforms\\1.1.0\\microsoft.netcore.platforms.1.1.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\netstandard.library\\2.0.3\\netstandard.library.2.0.3.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\system.buffers\\4.5.1\\system.buffers.4.5.1.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\system.diagnostics.diagnosticsource\\5.0.0\\system.diagnostics.diagnosticsource.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\system.diagnostics.eventlog\\5.0.0\\system.diagnostics.eventlog.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\system.memory\\4.5.4\\system.memory.4.5.4.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\system.numerics.vectors\\4.5.0\\system.numerics.vectors.4.5.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\5.0.0\\system.runtime.compilerservices.unsafe.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\system.security.principal.windows\\5.0.0\\system.security.principal.windows.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\system.text.encodings.web\\5.0.0\\system.text.encodings.web.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\system.text.json\\5.0.0\\system.text.json.5.0.0.nupkg.sha512",
+    "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\system.threading.tasks.extensions\\4.5.4\\system.threading.tasks.extensions.4.5.4.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Apache.NMS 1.7.1' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8' instead of the project target framework '.NETStandard,Version=v2.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Apache.NMS",
+      "targetGraphs": [
+        ".NETStandard,Version=v2.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Apache.NMS.ActiveMQ 1.7.2' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8' instead of the project target framework '.NETStandard,Version=v2.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Apache.NMS.ActiveMQ",
+      "targetGraphs": [
+        ".NETStandard,Version=v2.0"
+      ]
+    }
+  ]
+}
