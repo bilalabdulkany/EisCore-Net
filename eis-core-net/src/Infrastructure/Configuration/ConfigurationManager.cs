@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using EisCore.Model;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
@@ -9,21 +8,21 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Apache.NMS;
 using Apache.NMS.ActiveMQ;
+using EisCore.Application.Constants;
+using EisCore.Application.Interfaces;
+using EisCore.Domain.Entities;
 
-namespace EisCore.Configuration
+namespace EisCore.Infrastructure.Configuration
 {
     public class ConfigurationManager : IConfigurationManager
     {
-
-        string queueName;
-        string topicName;
+       
         private bool isDisposed = false;
-
-        private ILogger<EventProcessor> _log;
+        private ILogger<ConfigurationManager> _log;
         private BrokerConfiguration _brokerConfiguration;
         private ApplicationSettings _appSettings;
 
-        public ConfigurationManager(ILogger<EventProcessor> log, BrokerConfiguration brokerConfig)
+        public ConfigurationManager(ILogger<ConfigurationManager> log, BrokerConfiguration brokerConfig)
         {
 
             this._log = log;
@@ -66,7 +65,7 @@ namespace EisCore.Configuration
 
                 IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(connecturi);
 
-                TcpConnection = factory.CreateConnection();
+                TcpConnection = factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
                 if (TcpConnection.IsStarted)
                 {
                     _log.LogInformation("connection started");
@@ -159,19 +158,18 @@ namespace EisCore.Configuration
 
 
 
-        // #region IDisposable Members
+        #region IDisposable Members
 
-        // public void Dispose()
-        // {
-        //     if (!this.isDisposed)
-        //     {
-        //         this.GetBrokerConfiguration().Dispose();
-        //         this.isDisposed = true;
-        //     }
-        // }
+        public void Dispose()
+        {
+            if (!this.isDisposed)
+            {               
+                this.isDisposed = true;
+            }
+        }
 
 
-        // #endregion
+        #endregion
     }
 
 

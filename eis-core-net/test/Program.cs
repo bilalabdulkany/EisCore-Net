@@ -1,14 +1,15 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using EisCore.Configuration;
+using EisCore.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
- using System.Threading;
+using System.Threading;
+using EisCore.Infrastructure.Configuration;
 //using Serilog;
-using EisCore.Model;
+using EisCore.Domain.Entities;
 //using Microsoft.AspNetCore.Builder;
 
 namespace EisCore

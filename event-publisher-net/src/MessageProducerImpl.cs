@@ -1,6 +1,7 @@
 
 
-using EisCore.Model;
+using EisCore.Application.Interfaces;
+using EisCore.Domain.Entities;
 
 namespace event_publisher_net
 {  

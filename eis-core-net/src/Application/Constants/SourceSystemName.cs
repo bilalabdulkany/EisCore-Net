@@ -1,5 +1,5 @@
 
-namespace EisCore.Model
+namespace EisCore.Application.Constants
 {   
 
 public static class SourceSystemName

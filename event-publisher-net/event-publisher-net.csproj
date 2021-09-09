@@ -17,9 +17,10 @@
      <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0" />
   </ItemGroup>
 
- <ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\eis-core-net\eis-core-net.csproj" />
-    <ProjectReference Include="..\..\Project Folder\eis-core-net\eis-core-net.csproj" />
   </ItemGroup>
+
+
   
 </Project>
