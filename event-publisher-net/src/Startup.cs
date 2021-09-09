@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EisCore;
+using EisCore.Domain.Entities;
 using EisCore.Infrastructure.Configuration;
+using event_publisher_net.processor;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +37,8 @@ namespace event_publisher_net
             });            
 
             EisStartup.ConfigureServices(services);
+            services.AddSingleton<EventMessageProcessor>();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -58,6 +62,12 @@ namespace event_publisher_net
 
             app.ApplicationServices.GetService<ConfigurationManager>();
             app.ApplicationServices.GetService<EventProcessor>();
+
+
+            //TODO add in the documentation
+            EventHandlerRegistry eventHandlerRegistry = app.ApplicationServices.GetService<EventHandlerRegistry>();
+            EventMessageProcessor eventProcessor = app.ApplicationServices.GetService<EventMessageProcessor>();
+            eventHandlerRegistry.AddMessageProcessor(eventProcessor);
         }
     }
 }

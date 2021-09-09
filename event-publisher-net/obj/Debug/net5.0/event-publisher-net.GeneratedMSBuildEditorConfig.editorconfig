@@ -7,4 +7,4 @@ build_property.PublishSingleFile =
 build_property.IncludeAllContentForSelfExtract = 
 build_property._SupportedPlatformList = Android,iOS,Linux,macOS,Windows
 build_property.RootNamespace = event_publisher_net
-build_property.ProjectDir = D:\Bilal\Project Folder\EIS-CORE-DOTNET\event-publisher-net\
+build_property.ProjectDir = d:\Bilal\Project Folder\EIS-CORE-DOTNET\event-publisher-net\

@@ -1,2 +1,4 @@
-/eis-core-net/bin/
-/eis-core-net/obj/
+/eis-core-net/bin/**
+/eis-core-net/obj/**
+/event-publisher-net/bin/**
+/event-publisher-net/obj/**

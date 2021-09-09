@@ -50,13 +50,5 @@ namespace event_publisher_net.Controllers
             }
             return Ok(message);
         }
-
-        [HttpGet]
-        public IActionResult Consume(){
-            Console.WriteLine("##Consuming Message##");
-            _eventProcessor.RunConsumerEventListener();
-            return Ok();
-        }
-
     }
 }

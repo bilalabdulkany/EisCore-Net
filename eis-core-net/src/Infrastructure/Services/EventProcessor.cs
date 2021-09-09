@@ -28,7 +28,10 @@ namespace EisCore
 
         private IMessageConsumer _consumer;
 
-        public EventProcessor(ILogger<EventProcessor> log, IConfigurationManager configurationManager)
+        private EventHandlerRegistry _eventHandlerRegistry;
+
+        public EventProcessor(ILogger<EventProcessor> log, IConfigurationManager configurationManager,
+           EventHandlerRegistry eventHandlerRegistry)
         {
             this._log = log;
             this._configManager = configurationManager;
@@ -47,6 +50,7 @@ namespace EisCore
             _log.LogInformation("Destination Topic: {d}", _destination);          
             IMessageConsumer consumer = _session.CreateConsumer(_destination);
             _consumer = consumer;
+            _eventHandlerRegistry = eventHandlerRegistry;
             RunConsumerEventListener();
         }
 
@@ -68,6 +72,8 @@ namespace EisCore
 
             EisEvent eisEvent = JsonSerializer.Deserialize<EisEvent>(queueMessage.Text);
             _log.LogInformation("Receiving the message: {eisEvent}", eisEvent.ToString());
+
+            _eventHandlerRegistry.GetMessageProcessor().Process(eisEvent.payload, eisEvent.eventType);
             receivedMsg.Acknowledge();
             } catch(Exception ex) {
                 receivedMsg.Acknowledge();

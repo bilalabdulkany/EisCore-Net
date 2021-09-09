@@ -13,6 +13,7 @@ namespace EisCore.Infrastructure.Configuration
               services.AddSingleton<EventProcessor>();
               services.AddSingleton<EventPublisher>();
               services.AddSingleton<BrokerConfiguration>();
+              services.AddSingleton<EventHandlerRegistry>();
         }
     }
 }
