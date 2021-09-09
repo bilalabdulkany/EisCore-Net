@@ -1,4 +1,4 @@
-#Introduction
+# Introduction
 
 EIS Core library is developed to hide the complexities of asynchronous communication involved in microservices architecture
 1.	Publisher component
@@ -6,22 +6,30 @@ EIS Core library is developed to hide the complexities of asynchronous communica
 3.	Tracing and Auditing
 4.	Active/Passive JMS Consumer implementation (Competing consumer problem solution)
 
-#Getting Started
+# Getting Started
 
 Given below are the list of steps to be followed to integrate EIS Core in Java applications
 
-1.	Add the following library, versions will be communicated separately:
-Eis-core-net.dll
+1.	Add the following library, versions will be communicated separately and same can be downloaded via NuGet package manager
+
+		es-core-net.dll
+		
+	Nuget Package Manager
+	
+		//TODO Add command here
+	
+	
 2.	Open your Startup.cs class and the below line of code in the ConfigureServices method:
 
-public void ConfigureServices(IServiceCollection services)
-    {          
+		public void ConfigureServices(IServiceCollection services)
+    	{          
         //Add the below code
-            EisStartup.ConfigureServices(services);
-    }
+        EisStartup.ConfigureServices(services);
+    	}
+    
 3.	In the same Startup.cs class add the below line in the Configure method:
 
-  ##public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+  		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {   app.UseDeveloperExceptionPage();
@@ -34,7 +42,7 @@ public void ConfigureServices(IServiceCollection services)
             app.UseEndpoints(endpoints =>
             { endpoints.MapControllers();
             });
-	        //Add below code
+	    ## Add below code
             app.ApplicationServices.GetService<ConfigurationManager>();
             app.ApplicationServices.GetService<EventProcessor>();
         }
