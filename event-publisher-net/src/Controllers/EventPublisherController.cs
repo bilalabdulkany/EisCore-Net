@@ -4,10 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-
-using EisCore;
 using System.Diagnostics;
 using EisCore.Domain.Entities;
+using EisCore.Application.Interfaces;
 
 namespace event_publisher_net.Controllers
 {
@@ -16,14 +15,14 @@ namespace event_publisher_net.Controllers
     public class EventPublisherController : ControllerBase
     {
        
-        private EventPublisher _eventPublisher;
-        private EventProcessor _eventProcessor;
+        private IEventPublisher _eventPublisher;
+        private IEventProcessor _eventProcessor;
 
         
 
         private readonly ILogger<EventPublisherController> _logger;
 
-        public EventPublisherController(ILogger<EventPublisherController> logger,EventPublisher eventPublisher,EventProcessor eventProcessor)
+        public EventPublisherController(ILogger<EventPublisherController> logger,IEventPublisher eventPublisher,IEventProcessor eventProcessor)
         {
 
           this._eventPublisher=eventPublisher;
@@ -34,7 +33,7 @@ namespace event_publisher_net.Controllers
         [HttpPost("message")]       
         public IActionResult Publish(Payload message)
         {
-            Console.WriteLine($"###-Controller Publishing-- {message} -------###");
+            _logger.LogInformation("###-Controller Publishing-- {msg} -------###",message.Content);
             try{
 
             var messageProducerImpl= new MessageProducerImpl(message);
@@ -45,7 +44,7 @@ namespace event_publisher_net.Controllers
              _logger.LogInformation("Time taken {m} ms from Controller", watch.ElapsedMilliseconds);
              
             }catch(Exception e){
-                Console.WriteLine(e.StackTrace);
+                _logger.LogError("Error Occurred in Controller: {es}",e.StackTrace);
                 return Content(e.StackTrace, "Error");
             }
             return Ok(message);

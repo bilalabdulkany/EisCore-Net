@@ -10,8 +10,8 @@ namespace EisCore.Infrastructure.Configuration
         public static void ConfigureServices(IServiceCollection services)
         {
               services.AddSingleton<IConfigurationManager,ConfigurationManager>();
-              services.AddSingleton<EventProcessor>();
-              services.AddSingleton<EventPublisher>();
+              services.AddSingleton<IEventProcessor,EventProcessor>();
+              services.AddSingleton<IEventPublisher,EventPublisher>();
               services.AddSingleton<BrokerConfiguration>();
               services.AddSingleton<EventHandlerRegistry>();
         }
