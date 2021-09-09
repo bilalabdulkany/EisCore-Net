@@ -20,7 +20,8 @@ public void ConfigureServices(IServiceCollection services)
             EisStartup.ConfigureServices(services);
     }
 3.	In the same Startup.cs class add the below line in the Configure method:
-  public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+
+  ##public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {   app.UseDeveloperExceptionPage();
