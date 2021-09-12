@@ -1,15 +1,21 @@
 {
-    "BrokerConfiguration": {     
-        "protocol": "amqp://",
-        "url": "localhost:5672",
-        "username": "admin",
-        "password": "admin"
-    },
+  "BrokerConfiguration": {     
+      "protocol": "failover:(tcp://",
+      "url": "localhost:61616)",
+      "username": "admin",
+      "password": "admin"
+  },
 
-      "ApplicationSettings": [{
-        "Name":"FLYING_PROCESS",      
-        "OutboundTopic": "topic.outbound.flying.activity",
-        "InboundQueue": "topic.outbound.flying.activity::queue.inbound.flying.activity"
-      }]
-    
+    "ApplicationSettings": [{
+      "Name":"FLYING_PROCESS",      
+      "OutboundTopic": "topic.outbound.flying.activity",
+      "InboundQueue": "topic.outbound.flying.activity::queue.inbound.flying.activity"
+    },
+    {
+      "Name":"MDM",      
+      "OutboundTopic": "topic.outbound.mdm",
+      "InboundQueue": "topic.outbound.mdm::queue.inbound.mdm"
+    }
+  ]
+  
 }

@@ -11,6 +11,7 @@ using Apache.NMS.ActiveMQ;
 using EisCore.Application.Constants;
 using EisCore.Application.Interfaces;
 using EisCore.Domain.Entities;
+using EisCore.Infrastructure.Persistence;
 
 namespace EisCore.Infrastructure.Configuration
 {
@@ -21,12 +22,15 @@ namespace EisCore.Infrastructure.Configuration
         private ILogger<ConfigurationManager> _log;
         private BrokerConfiguration _brokerConfiguration;
         private ApplicationSettings _appSettings;
+        private IConfiguration _configuration;
+       
 
-        public ConfigurationManager(ILogger<ConfigurationManager> log, BrokerConfiguration brokerConfig)
+        public ConfigurationManager(ILogger<ConfigurationManager> log, BrokerConfiguration brokerConfig, IConfiguration configuration)
         {
 
             this._log = log;
             this._brokerConfiguration = brokerConfig;
+            this._configuration=configuration;
 
             _log.LogInformation("ConfigurationManager constructor");
             BindAppSettingsToObjects();
@@ -38,6 +42,7 @@ namespace EisCore.Infrastructure.Configuration
             var assembly = Assembly.GetExecutingAssembly();
             var configurationBuilder = new ConfigurationBuilder();
             string name = "EisCore.eissettings.json";
+            string assemblyName = assembly.ManifestModule.Name.Replace(".dll", string.Empty);
             string resourcePath = assembly.GetManifestResourceNames()[0];
             Stream stream = assembly.GetManifestResourceStream(name);
             configurationBuilder.AddJsonStream(stream);
@@ -46,6 +51,17 @@ namespace EisCore.Infrastructure.Configuration
             var AppSettingsList = new List<ApplicationSettings>();
             brokerConfigSection.GetSection("ApplicationSettings").Bind(AppSettingsList);
             _appSettings = GetAppSettingsFromList(AppSettingsList);
+
+
+            var environment = this._configuration["environment:profile"];
+            
+            if(environment != null) {
+                name = assemblyName + ".eissettings."+ environment + ".json";
+                _log.LogInformation("loading : {n}" + name);
+                stream = assembly.GetManifestResourceStream(name);
+                configurationBuilder.AddJsonStream(stream);            
+            }
+            
 
         }
         public void CreateAsyncBrokerConnection()

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EisCore;
+using EisCore.Application.Interfaces;
 using EisCore.Domain.Entities;
 using EisCore.Infrastructure.Configuration;
 using event_publisher_net.processor;
@@ -61,13 +62,15 @@ namespace event_publisher_net
             });
 
             app.ApplicationServices.GetService<ConfigurationManager>();
-            app.ApplicationServices.GetService<EventProcessor>();
+            app.ApplicationServices.GetService<EventProcessor>();  
+            app.ApplicationServices.GetService<IDatabaseBootstrap>().Setup();        
 
 
             //TODO add in the documentation
             EventHandlerRegistry eventHandlerRegistry = app.ApplicationServices.GetService<EventHandlerRegistry>();
             EventMessageProcessor eventProcessor = app.ApplicationServices.GetService<EventMessageProcessor>();
             eventHandlerRegistry.AddMessageProcessor(eventProcessor);
+
         }
     }
 }
