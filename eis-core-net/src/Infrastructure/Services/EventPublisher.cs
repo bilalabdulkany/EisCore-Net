@@ -130,7 +130,7 @@ namespace EisCore
             eisEvent.traceId = messageProducer.getTraceId();
             eisEvent.spanId = Guid.NewGuid().ToString();
             eisEvent.createdDate = DateTime.Now;
-            eisEvent.sourceSystemName = SourceSystemName.FLYING_PROCESS;//TODO get the name from properies
+            eisEvent.sourceSystemName = SourceSystemName.MDM;//TODO get the name from properies
             eisEvent.payload = messageProducer.getPayLoad();
             return eisEvent;
         }
