@@ -20,16 +20,15 @@ namespace EisCore
         private Apache.NMS.IMessageProducer _publisher;
         private IDestination _destination;
         readonly IConfigurationManager _configManager;
-        readonly IApplicationDbContext _appDbContext;
+        //readonly IApplicationDbContext _appDbContext;
         private readonly ILogger<EventPublisher> _log;
         private ISession _session;
         private IConnection _connection;
         protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
         private bool isDisposed = false;
 
-        public EventPublisher(ILogger<EventPublisher> log,IApplicationDbContext appDbContext, IConfigurationManager configManager)
-        {
-            this._appDbContext=appDbContext;
+        public EventPublisher(ILogger<EventPublisher> log, IConfigurationManager configManager)        {
+            //this._appDbContext=appDbContext;
             this._log = log;
             this._configManager = configManager;
             _session = configManager.GetBrokerConfiguration().session;
@@ -61,7 +60,7 @@ namespace EisCore
                 watch.Start();
                 ITextMessage request = GetTextMessageRequest(messagePublish);
                 _publisher.Send(request);
-                _appDbContext.Create(new Application.Models.Event("ID3","Code1","Publish-Event","Testing Sample Insert"));
+                //_appDbContext.Create(new Application.Models.Event("ID3","Code1","Publish-Event","Testing Sample Insert"));
                 watch.Stop();
                 _log.LogInformation("Message Sent! time taken {milliseconds} ms to Topic: {topic}", watch.ElapsedMilliseconds, _configManager.GetAppSettings().OutboundTopic);
             }
@@ -94,7 +93,7 @@ namespace EisCore
                 _log.LogInformation("{s}", jsonString);
                 ITextMessage request = GetTextMessageRequest(jsonString);
                 _publisher.Send(request);
-                _appDbContext.Create(new Application.Models.Event("ID11","Code1","Publish-Event","Testing Sample Insert"));
+                //_appDbContext.Create(new Application.Models.Event("ID11","Code1","Publish-Event","Testing Sample Insert"));
                 watch.Stop();
                 _log.LogInformation("Message Sent! time taken {milliseconds} ms to Topic: {topic}", watch.ElapsedMilliseconds, _configManager.GetAppSettings().OutboundTopic);
             }

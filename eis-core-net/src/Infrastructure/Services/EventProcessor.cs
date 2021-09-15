@@ -19,7 +19,7 @@ namespace EisCore
         private readonly ILogger<EventProcessor> _log;
         private readonly ApplicationSettings _appSettings;
         readonly IConfigurationManager _configManager;
-        readonly IApplicationDbContext _appDbContext;
+        //readonly IApplicationDbContext _appDbContext;
         private ISession _session;
         private IConnection _connection;
         private IDestination _destination;
@@ -34,12 +34,11 @@ namespace EisCore
      
 
         public EventProcessor(ILogger<EventProcessor> log, IConfigurationManager configurationManager,
-        IApplicationDbContext appDbContext,
            EventHandlerRegistry eventHandlerRegistry)
         {
             this._log = log;
             this._configManager = configurationManager;
-            this._appDbContext=appDbContext;
+            //this._appDbContext=appDbContext;
             this._appSettings = configurationManager.GetAppSettings();
             
             _log.LogInformation("EventProcessor constructor");
@@ -64,7 +63,7 @@ namespace EisCore
             _log.LogInformation("Starting listener"); 
             _connection.Start();
             _consumer.Listener += new MessageListener(OnMessage);
-            _log.LogInformation("Logging data",_appDbContext.Get().Result.GetEnumerator().Current);
+            //_log.LogInformation("Logging data",_appDbContext.Get().Result.GetEnumerator().Current);
 
         }
 

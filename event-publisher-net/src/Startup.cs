@@ -35,10 +35,10 @@ namespace event_publisher_net
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "event_publisher_net", Version = "v1" });
-            });            
+            });
 
-            EisStartup.ConfigureServices(services);
-            services.AddSingleton<EventMessageProcessor>();
+            EisStartup.ConfigureServices(services, this.Configuration);
+            services.AddScoped<IMessageProcessor, EventMessageProcessor>();
 
         }
 
@@ -62,15 +62,24 @@ namespace event_publisher_net
             });
 
             app.ApplicationServices.GetService<IConfigurationManager>();
-            app.ApplicationServices.GetService<IEventProcessor>();  
-            app.ApplicationServices.GetService<IDatabaseBootstrap>().Setup();        
+            app.ApplicationServices.GetService<IEventProcessor>();
+            //app.ApplicationServices.GetService<IDatabaseBootstrap>().Setup();
 
 
+
+            EventMessageProcessor eventProcessor  = null;
+            // get scoped factory
+            var scopedFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();
+            // create a scope
+            using (var scope = scopedFactory.CreateScope())
+            {
+                // then resolve the services and execute it
+                eventProcessor = (EventMessageProcessor) scope.ServiceProvider.GetRequiredService<IMessageProcessor>();
+            }
             //TODO add in the documentation
             EventHandlerRegistry eventHandlerRegistry = app.ApplicationServices.GetService<EventHandlerRegistry>();
-            EventMessageProcessor eventProcessor = app.ApplicationServices.GetService<EventMessageProcessor>();
+            //eventProcessor = (EventMessageProcessor)app.ApplicationServices.GetService<IMessageProcessor>();
             eventHandlerRegistry.AddMessageProcessor(eventProcessor);
-
         }
     }
 }
