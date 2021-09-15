@@ -61,8 +61,8 @@ namespace event_publisher_net
                 endpoints.MapControllers();
             });
 
-            app.ApplicationServices.GetService<ConfigurationManager>();
-            app.ApplicationServices.GetService<EventProcessor>();  
+            app.ApplicationServices.GetService<IConfigurationManager>();
+            app.ApplicationServices.GetService<IEventProcessor>();  
             app.ApplicationServices.GetService<IDatabaseBootstrap>().Setup();        
 
 
