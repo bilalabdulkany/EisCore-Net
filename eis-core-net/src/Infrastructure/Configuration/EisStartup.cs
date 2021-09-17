@@ -26,7 +26,7 @@ namespace EisCore.Infrastructure.Configuration
 
 
             // base configuration from appsettings.json
-           /* services.Configure<QuartzOptions>(Configuration.GetSection("Quartz"));
+           services.Configure<QuartzOptions>(Configuration.GetSection("Quartz"));
 
             // if you are using persistent job store, you might want to alter some options
             services.Configure<QuartzOptions>(options =>
@@ -39,7 +39,7 @@ namespace EisCore.Infrastructure.Configuration
             services.AddQuartz(q =>
             {
                 // Use a Scoped container to create jobs. I'll touch on this later
-                q.UseMicrosoftDependencyInjectionScopedJobFactory();
+                //q.UseMicrosoftDependencyInjectionScopedJobFactory();
                 var jobKey = new JobKey("HelloWorldJob");
 
                 // Register the job with the DI container
@@ -53,7 +53,7 @@ namespace EisCore.Infrastructure.Configuration
             });
             services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
-            */
+            
         }
     }
 }
