@@ -25,20 +25,20 @@ namespace EisCore.Infrastructure.Configuration
         private IConfiguration _configuration;
        
 
-        public ConfigurationManager(ILogger<ConfigurationManager> log, BrokerConfiguration brokerConfig, IConfiguration configuration)
+        public ConfigurationManager(ILogger<ConfigurationManager> log, IConfiguration configuration)
         {
 
             this._log = log;
-            this._brokerConfiguration = brokerConfig;
+            //this._brokerConfiguration = brokerConfig;
             this._configuration=configuration;
 
             _log.LogInformation("ConfigurationManager constructor");
-            BindAppSettingsToObjects();
-            CreateAsyncBrokerConnection();
+            BindAppSettingsToObjects();           
         }
 
         private void BindAppSettingsToObjects()
         {
+            _log.LogInformation("Loading application configurations");
             var assembly = Assembly.GetExecutingAssembly();
             var configurationBuilder = new ConfigurationBuilder();
             string name = "EisCore.eissettings.json";
@@ -47,89 +47,30 @@ namespace EisCore.Infrastructure.Configuration
             Stream stream = assembly.GetManifestResourceStream(name);
             configurationBuilder.AddJsonStream(stream);
             var brokerConfigSection = configurationBuilder.Build();
-            brokerConfigSection.GetSection("BrokerConfiguration").Bind(this._brokerConfiguration);
+            var brokerConfig=new BrokerConfiguration();
+            brokerConfigSection.GetSection("BrokerConfiguration").Bind(brokerConfig);
+            _brokerConfiguration=brokerConfig;
             var AppSettingsList = new List<ApplicationSettings>();
             brokerConfigSection.GetSection("ApplicationSettings").Bind(AppSettingsList);
             _appSettings = GetAppSettingsFromList(AppSettingsList);
-
-
-            var environment = this._configuration["environment:profile"];
-            
+            var environment = this._configuration["environment:profile"];            
             if(environment != null) {
                 name = assemblyName + ".eissettings."+ environment + ".json";
-                _log.LogInformation("loading : {n}" + name);
+                _log.LogInformation("loading : {n}" ,name);
                 stream = assembly.GetManifestResourceStream(name);
                 configurationBuilder.AddJsonStream(stream);            
             }
             
 
         }
-        public void CreateAsyncBrokerConnection()
-        {
-
-            //TODO - connection should be created as soon as the DI is injected
-
-            IConnection TcpConnection = null;
-            ISession TcpSession = null;
-            try
-            {
-                var brokerUrl = GetBrokerUrl();
-
-                _log.LogInformation("Broker - {brokerUrl}", brokerUrl);
-
-                Uri connecturi = new Uri(brokerUrl);
-
-                IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(connecturi);
-
-                TcpConnection = factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
-                if (TcpConnection.IsStarted)
-                {
-                    _log.LogInformation("connection started");
-
-                }
-
-                // TcpConnection.ConnectionInterruptedListener += new ConnectionInterruptedListener(OnConnectionInterruptedListener);
-                // TcpConnection.ConnectionResumedListener += new ConnectionResumedListener(OnConnectionResumedListener);
-                // TcpConnection.ExceptionListener += new ExceptionListener(OnExceptionListener);
-
-
-                TcpSession = TcpConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
-
-                this._brokerConfiguration.connection = TcpConnection;
-                this._brokerConfiguration.session = TcpSession;
-                _log.LogInformation("##Created connection {con}", this._brokerConfiguration.connection.ToString());
-            }
-            catch (Apache.NMS.ActiveMQ.ConnectionClosedException e1)
-            {
-                _log.LogCritical("Connection closed exception thrown while closing a connection. {e1}", e1.StackTrace);
-                try
-                {
-                    _log.LogCritical("Stopping Connection..");
-                    TcpConnection.Stop();
-                }
-                catch (Apache.NMS.ActiveMQ.ConnectionClosedException e2)
-                {
-                    _log.LogCritical("Cannot close the connection {e2}", e2.StackTrace);
-                    TcpConnection.Close();
-                }
-                finally
-                {
-                    TcpConnection.Dispose();
-                }
-            }
-            catch (Exception e)
-            {
-                _log.LogError("Exception occurred {class}: {e}", this.ToString(), e.StackTrace);
-            }
-
-        }
-
+       
         public string GetBrokerUrl()
         {
-            if (_brokerConfiguration != null)
+
+            if (this._brokerConfiguration != null)
             {
                 // + _brokerConfiguration.Username + ":" + _brokerConfiguration.Password + "@"
-                return _brokerConfiguration.Protocol + _brokerConfiguration.Url;
+                return this._brokerConfiguration.Protocol + this._brokerConfiguration.Url;
             }
             return null;
         }

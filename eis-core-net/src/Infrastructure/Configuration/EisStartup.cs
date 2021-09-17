@@ -14,6 +14,7 @@ namespace EisCore.Infrastructure.Configuration
         public static void ConfigureServices(IServiceCollection services, IConfiguration Configuration)
         {
             services.AddSingleton<IConfigurationManager, ConfigurationManager>();
+            services.AddSingleton<IBrokerConfigFactory, BrokerConfigFactory>();
             //services.AddSingleton<IDatabaseBootstrap, DatabaseBootstrap>();              
             services.AddSingleton<IEventProcessor, EventProcessor>();
             services.AddSingleton<IEventPublisher, EventPublisher>();
@@ -25,7 +26,7 @@ namespace EisCore.Infrastructure.Configuration
 
 
             // base configuration from appsettings.json
-            services.Configure<QuartzOptions>(Configuration.GetSection("Quartz"));
+           /* services.Configure<QuartzOptions>(Configuration.GetSection("Quartz"));
 
             // if you are using persistent job store, you might want to alter some options
             services.Configure<QuartzOptions>(options =>
@@ -51,6 +52,8 @@ namespace EisCore.Infrastructure.Configuration
                     .WithCronSchedule("0/5 * * * * ?")); // run every 5 seconds                    
             });
             services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+
+            */
         }
     }
 }

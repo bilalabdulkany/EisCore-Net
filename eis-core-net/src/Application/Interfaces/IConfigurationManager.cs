@@ -9,8 +9,7 @@ namespace EisCore.Application.Interfaces
         ApplicationSettings GetAppSettings();
         BrokerConfiguration GetBrokerConfiguration();
         void Dispose();   
-        void CreateAsyncBrokerConnection();
-
+       
 
     }
 }

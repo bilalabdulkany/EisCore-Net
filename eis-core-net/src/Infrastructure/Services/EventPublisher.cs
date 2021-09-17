@@ -18,30 +18,20 @@ namespace EisCore
     {
 
         private Apache.NMS.IMessageProducer _publisher;
-        private IDestination _destination;
-        readonly IConfigurationManager _configManager;
+        private readonly IConfigurationManager _configManager;
         //readonly IApplicationDbContext _appDbContext;
         private readonly ILogger<EventPublisher> _log;
-        private ISession _session;
-        private IConnection _connection;
+
+        private readonly IBrokerConfigFactory _brokerConfigFactory;
+
         protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
         private bool isDisposed = false;
 
-        public EventPublisher(ILogger<EventPublisher> log, IConfigurationManager configManager)        {
+        public EventPublisher(ILogger<EventPublisher> log, IConfigurationManager configManager, IBrokerConfigFactory brokerConfigFactory)        {
             //this._appDbContext=appDbContext;
             this._log = log;
-            this._configManager = configManager;
-            _session = configManager.GetBrokerConfiguration().session;
-            _connection = configManager.GetBrokerConfiguration().connection;
-            if (_session == null || _connection == null)
-            {
-                //Create session
-                _log.LogWarning("TCP Session not available");
-                if (_session == null) { throw new Exception("Session cannot be created"); }
-            }
-            var topic = _configManager.GetAppSettings().OutboundTopic;
-            _destination = SessionUtil.GetTopic(_session, topic);
-            _log.LogInformation("Destination Topic: {d}", _destination);
+            this._brokerConfigFactory=brokerConfigFactory;
+            this._configManager = configManager;           
 
         }
 
@@ -51,14 +41,10 @@ namespace EisCore
             try
             {
                 _log.LogInformation("Trying to publish message...");
-
-                _publisher = _session.CreateProducer(_destination);
-                _connection.Start();
-                _publisher.DeliveryMode = MsgDeliveryMode.Persistent;
-                _publisher.RequestTimeout = receiveTimeout;
+                _publisher = _brokerConfigFactory.CreateProducer();                
                 var watch = new System.Diagnostics.Stopwatch();
                 watch.Start();
-                ITextMessage request = GetTextMessageRequest(messagePublish);
+                ITextMessage request = _brokerConfigFactory.GetTextMessageRequest(messagePublish);
                 _publisher.Send(request);
                 //_appDbContext.Create(new Application.Models.Event("ID3","Code1","Publish-Event","Testing Sample Insert"));
                 watch.Stop();
@@ -79,11 +65,7 @@ namespace EisCore
                 //TODO check if connection is stable and up
 
                 //  
-
-                _configManager.GetBrokerConfiguration().connection.Start();
-                _publisher = _session.CreateProducer(_destination);
-                _publisher.DeliveryMode = MsgDeliveryMode.Persistent;
-                _publisher.RequestTimeout = receiveTimeout;
+                _publisher = _brokerConfigFactory.CreateProducer();
 
                 _log.LogInformation("sending object");
                 EisEvent eisEvent = this.getEisEvent(messageObject);
@@ -91,7 +73,7 @@ namespace EisCore
                 string jsonString = JsonSerializer.Serialize(eisEvent);
                 watch.Start();
                 _log.LogInformation("{s}", jsonString);
-                ITextMessage request = GetTextMessageRequest(jsonString);
+                ITextMessage request = _brokerConfigFactory.GetTextMessageRequest(jsonString);
                 _publisher.Send(request);
                 //_appDbContext.Create(new Application.Models.Event("ID11","Code1","Publish-Event","Testing Sample Insert"));
                 watch.Stop();
@@ -102,22 +84,11 @@ namespace EisCore
             {
                 _log.LogError("Error {e}", e.StackTrace);
                 _log.LogCritical("Connection Listener delegation..{log}", e.GetBaseException());
-                _configManager.CreateAsyncBrokerConnection();
-            }
-            finally
-            {
-                _connection = _configManager.GetBrokerConfiguration().connection;
+              // _brokerConfigFactory.CreateBrokerConnection();
             }
         }
 
-        private ITextMessage GetTextMessageRequest(string message)
-        {
-            ITextMessage request = _session.CreateTextMessage(message);
-            request.NMSCorrelationID = Guid.NewGuid().ToString();
-            // request.Properties["NMSXGroupID"] = "cheese";
-            // request.Properties["myHeader"] = "Cheddar";
-            return request;
-        }
+       
 
 
 

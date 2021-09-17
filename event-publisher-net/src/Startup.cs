@@ -64,10 +64,7 @@ namespace event_publisher_net
             app.ApplicationServices.GetService<IConfigurationManager>();
             app.ApplicationServices.GetService<IEventProcessor>();
             //app.ApplicationServices.GetService<IDatabaseBootstrap>().Setup();
-
-
-
-            EventMessageProcessor eventProcessor  = null;
+             EventMessageProcessor eventProcessor  = null;
             // get scoped factory
             var scopedFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();
             // create a scope
@@ -76,7 +73,6 @@ namespace event_publisher_net
                 // then resolve the services and execute it
                 eventProcessor = (EventMessageProcessor) scope.ServiceProvider.GetRequiredService<IMessageProcessor>();
             }
-            //TODO add in the documentation
             EventHandlerRegistry eventHandlerRegistry = app.ApplicationServices.GetService<EventHandlerRegistry>();
             //eventProcessor = (EventMessageProcessor)app.ApplicationServices.GetService<IMessageProcessor>();
             eventHandlerRegistry.AddMessageProcessor(eventProcessor);

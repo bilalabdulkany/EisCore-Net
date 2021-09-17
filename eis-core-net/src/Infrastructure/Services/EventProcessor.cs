@@ -17,43 +17,21 @@ namespace EisCore
     {
         private bool isDisposed = false;
         private readonly ILogger<EventProcessor> _log;
-        private readonly ApplicationSettings _appSettings;
         readonly IConfigurationManager _configManager;
         //readonly IApplicationDbContext _appDbContext;
-        private ISession _session;
-        private IConnection _connection;
-        private IDestination _destination;
         protected static ITextMessage queueMessage = null;
-        protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
-        protected static AutoResetEvent semaphore = new AutoResetEvent(false);
-
-        private IMessageConsumer _consumer;
 
         private EventHandlerRegistry _eventHandlerRegistry;
 
-     
+        private IBrokerConfigFactory _brokerConfigFactory;
+         private IMessageConsumer _consumer;
 
         public EventProcessor(ILogger<EventProcessor> log, IConfigurationManager configurationManager,
-           EventHandlerRegistry eventHandlerRegistry)
+           EventHandlerRegistry eventHandlerRegistry, IBrokerConfigFactory brokerConfigFactory)
         {
             this._log = log;
-            this._configManager = configurationManager;
-            //this._appDbContext=appDbContext;
-            this._appSettings = configurationManager.GetAppSettings();
-            
-            _log.LogInformation("EventProcessor constructor");
-            _session = _configManager.GetBrokerConfiguration().session;
-            _connection = _configManager.GetBrokerConfiguration().connection;
-            if (_session == null || _connection == null)
-            {
-                _log.LogInformation("TCP Session not available, creating one..");                
-                if (_session == null) { throw new Exception("Session cannot be created"); }
-            }
-            var Queue = this._appSettings.InboundQueue;
-            _destination = SessionUtil.GetQueue(_session, Queue);
-            _log.LogInformation("Destination Topic: {d}", _destination);          
-            IMessageConsumer consumer = _session.CreateConsumer(_destination);
-            _consumer = consumer;
+            this._brokerConfigFactory=brokerConfigFactory;
+           
             _eventHandlerRegistry = eventHandlerRegistry;
             RunConsumerEventListener();
         }
@@ -61,7 +39,7 @@ namespace EisCore
         public void RunConsumerEventListener()
         {
             _log.LogInformation("Starting listener"); 
-            _connection.Start();
+            _consumer = _brokerConfigFactory.CreateConsumer();
             _consumer.Listener += new MessageListener(OnMessage);
             //_log.LogInformation("Logging data",_appDbContext.Get().Result.GetEnumerator().Current);
 
