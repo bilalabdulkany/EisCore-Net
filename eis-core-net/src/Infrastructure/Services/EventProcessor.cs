@@ -59,6 +59,7 @@ namespace EisCore
 
             _eventHandlerRegistry.GetMessageProcessor().Process(eisEvent.payload, eisEvent.eventType);
             receivedMsg.Acknowledge();
+            _brokerConfigFactory._ConsumerConnection.Stop();
             } catch(Exception ex) {
                 receivedMsg.Acknowledge();
                 _log.LogError("exception in onMessage: {eisEvent}", ex.StackTrace);

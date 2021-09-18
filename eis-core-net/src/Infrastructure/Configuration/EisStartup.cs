@@ -4,7 +4,7 @@ using EisCore.Domain.Entities;
 using EisCore.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Quartz;
-using EisCore.src.Infrastructure.Services;
+using EisCore.Infrastructure.Services;
 
 namespace EisCore.Infrastructure.Configuration
 {
@@ -49,7 +49,7 @@ namespace EisCore.Infrastructure.Configuration
                 q.AddTrigger(opts => opts
                     .ForJob(jobKey) // link to the HelloWorldJob
                     .WithIdentity("HelloWorldJob-trigger") // give the trigger a unique name
-                    .WithCronSchedule("0/5 * * * * ?")); // run every 5 seconds                    
+                    .WithCronSchedule("0/10 * * * * ?")); // run every 5 seconds                    
             });
             services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 

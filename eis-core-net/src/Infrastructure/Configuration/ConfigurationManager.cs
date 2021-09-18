@@ -97,21 +97,7 @@ namespace EisCore.Infrastructure.Configuration
             return this._appSettings;
         }
 
-        // protected void OnConnectionInterruptedListener()
-        // {
-        //     _log.LogDebug("Connection Interrupted.. Trying to reconnect");
-        //     // CreateAsyncBrokerConnection();
-
-        // }
-        // protected void OnConnectionResumedListener()
-        // {
-        //     _log.LogDebug("Connection Resumed");
-        // }
-        // protected void OnExceptionListener(Exception NMSException)
-        // {
-        //     _log.LogError("On Exception Listener: {e}", NMSException.GetBaseException());
-        //     //    CreateAsyncBrokerConnection();
-        // }
+     
 
 
 
