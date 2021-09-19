@@ -15,17 +15,26 @@ namespace EisCore.Infrastructure.Configuration
         private BrokerConfiguration _brokerConfiguration;
         private ApplicationSettings _appSettings;
         readonly IConfigurationManager _configManager;
+
+
         private ISession _ConsumerSession;
         private ISession _ProducerSession;
-        public IConnection _ConsumerConnection{get;set;}
-        public IConnection _ProducerConnection{get;set;}
+        public IConnection _ConsumerConnection { get; set; }
+        public IConnection _ProducerConnection { get; set; }
+        private IConnectionFactory _factory;
+
+
 
         protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
         protected static AutoResetEvent semaphore = new AutoResetEvent(false);
 
         private IMessageConsumer _consumer;
         private IMessageProducer _publisher;
-        public BrokerConfigFactory(ILogger<BrokerConfigFactory> log, IConfigurationManager configurationManager, BrokerConfiguration brokerConfig)
+
+        private readonly IEventProcessor _eventProcessor;
+
+        public BrokerConfigFactory(ILogger<BrokerConfigFactory> log,
+        IConfigurationManager configurationManager, BrokerConfiguration brokerConfig, IEventProcessor eventProcessor)
         {
             this._log = log;
             this._configManager = configurationManager;
@@ -33,18 +42,17 @@ namespace EisCore.Infrastructure.Configuration
             // this._brokerConfiguration=brokerConfig;
             _log.LogInformation("BrokerFactory constructor");
             _brokerConfiguration = configurationManager.GetBrokerConfiguration();
-            CreateBrokerConnection();
-            if (_ProducerSession == null || _ProducerConnection == null
-            || _ConsumerSession == null || _ConsumerConnection == null
-            )
-            {
-                //TODO if either is null, throw exception for now
-                _log.LogInformation("TCP Session not available, creating one..");
-                throw new Exception("Session cannot be created");
-            }
+            _eventProcessor = eventProcessor;
+            var brokerUrl = _configManager.GetBrokerUrl();
+            _log.LogInformation("Broker - {brokerUrl}", brokerUrl);
+
+            Uri connecturi = new Uri(brokerUrl);
+            IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(connecturi);
+            _factory = factory;
+            CreateProducerConnection();            
         }
 
-        public void CreateBrokerConnection()
+        private void CreateProducerConnection()
         {
             IConnection ConsumerTcpConnection = null;
             ISession ConsumerTcpSession = null;
@@ -53,35 +61,23 @@ namespace EisCore.Infrastructure.Configuration
             ISession ProducerTcpSession = null;
             try
             {
-                var brokerUrl = _configManager.GetBrokerUrl();
+                ProducerTcpConnection = _factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
+                ProducerTcpConnection.ClientId = "Producer_Connection";
 
-                _log.LogInformation("Broker - {brokerUrl}", brokerUrl);
-
-                Uri connecturi = new Uri(brokerUrl);
-                IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(connecturi);
-
-                ProducerTcpConnection = factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
-                ConsumerTcpConnection = factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
-
-                if (ProducerTcpConnection.IsStarted&&ConsumerTcpConnection.IsStarted)
+                if (ProducerTcpConnection.IsStarted)
                 {
                     _log.LogInformation("producer and consumer connection started");
                 }
 
-               /* TcpConnection.ConnectionInterruptedListener += new ConnectionInterruptedListener(OnConnectionInterruptedListener);
-                TcpConnection.ConnectionResumedListener += new ConnectionResumedListener(OnConnectionResumedListener);
-                TcpConnection.ExceptionListener += new ExceptionListener(OnExceptionListener);
-                */
+                /* TcpConnection.ConnectionInterruptedListener += new ConnectionInterruptedListener(OnConnectionInterruptedListener);
+                 TcpConnection.ConnectionResumedListener += new ConnectionResumedListener(OnConnectionResumedListener);
+                 TcpConnection.ExceptionListener += new ExceptionListener(OnExceptionListener);
+                 */
                 ProducerTcpSession = ProducerTcpConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
-                ConsumerTcpSession = ConsumerTcpConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
                 _ProducerConnection = ProducerTcpConnection;
-                _ConsumerConnection= ConsumerTcpConnection;
                 _ProducerSession = ProducerTcpSession;
-                _ConsumerSession=ConsumerTcpSession;
-
 
                 _log.LogInformation("##Created Publisher connection {con}", this._ProducerConnection.ToString());
-                _log.LogInformation("##Created Consumer connection {con}", this._ConsumerConnection.ToString());
             }
             catch (Apache.NMS.ActiveMQ.ConnectionClosedException e1)
             {
@@ -90,19 +86,15 @@ namespace EisCore.Infrastructure.Configuration
                 {
                     _log.LogCritical("Stopping Connection..");
                     ProducerTcpConnection.Stop();
-                    ConsumerTcpConnection.Stop();
                 }
                 catch (Apache.NMS.ActiveMQ.ConnectionClosedException e2)
                 {
                     _log.LogCritical("Cannot close the connection {e2}", e2.StackTrace);
                     ProducerTcpConnection.Close();
-                    ConsumerTcpConnection.Close();
-
                 }
                 finally
                 {
                     ProducerTcpConnection.Dispose();
-                    ConsumerTcpConnection.Dispose();
 
                 }
             }
@@ -112,23 +104,43 @@ namespace EisCore.Infrastructure.Configuration
             }
         }
 
-
-        public IMessageConsumer CreateConsumer()
+        public void CreateConsumer()
         {
+            var ConsumerTcpConnection = _factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
+            ConsumerTcpConnection.ClientId = "Consumer_Connection";
+            var ConsumerTcpSession = ConsumerTcpConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
+            _ConsumerConnection = ConsumerTcpConnection;
+            _ConsumerSession = ConsumerTcpSession;
+            _ConsumerConnection.Start();
             if (_ConsumerConnection.IsStarted)
             {
-                _log.LogInformation("producer connection started");
-            } else {
-                _log.LogInformation("producer connection not started, starting");
-                _ConsumerConnection.Start();
+                _log.LogInformation("consuler connection started");
+            }
+            else
+            {
+                _log.LogInformation("consumer connection not started, starting");
             }
             var Queue = this._appSettings.InboundQueue;
             var QueueDestination = SessionUtil.GetQueue(_ConsumerSession, Queue);
             _log.LogInformation("Created MessageProducer for Destination Queue: {d}", QueueDestination);
             _consumer = _ConsumerSession.CreateConsumer(QueueDestination);
-            return _consumer;
+            _eventProcessor.RunConsumerEventListener(_consumer);
         }
 
+
+        public void DestroyConsumer()
+        {
+            try
+            {
+                _ConsumerConnection.Stop();
+                _ConsumerConnection.Close();
+                _ConsumerConnection.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _log.LogError("Error while disposing the conneciton");
+            }
+        }
 
         public IMessageProducer CreateProducer()
         {

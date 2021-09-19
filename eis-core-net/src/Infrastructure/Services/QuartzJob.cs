@@ -10,54 +10,59 @@ namespace EisCore.Infrastructure.Services
 {
     public class QuartzJob : IJob
     {
-      //  IBrokerConfigFactory _brokerConfigFactory;
-        private readonly IServiceProvider _provider;
-
-        public QuartzJob(IServiceProvider provider)
+        private readonly IBrokerConfigFactory _brokerConfigFactory;
+        public QuartzJob(IServiceProvider provider, IBrokerConfigFactory brokerConfigFactory)
         {
             //TODO https://andrewlock.net/using-scoped-services-inside-a-quartz-net-hosted-service-with-asp-net-core/
-            this._provider = provider;
+            this._brokerConfigFactory = brokerConfigFactory;
         }
+
+        private Boolean stopStart = true;
+
         public Task Execute(IJobExecutionContext context)
         {
-            using (var scope = _provider.CreateScope())
+            Console.Out.WriteLineAsync("#########Consumer Connection Quartz Job...");
+
+
+            // _brokerConfigFactory._ConsumerConnection.Start();
+            if (stopStart)
             {
-               try { var brokerConnectionFactory = scope.ServiceProvider.GetService<IBrokerConfigFactory>();
-                brokerConnectionFactory._ProducerConnection.Start();
-               }catch(Exception e){
-                   Console.WriteLine("Error occurred in connection",e.StackTrace);
-               }
-                return Console.Out.WriteLineAsync("Consumer Connection Started!");
-                
+                _brokerConfigFactory.CreateConsumer();
+                stopStart = false;
+                return Console.Out.WriteLineAsync("Consumer Connection started!");
+            }
+            else
+            {
+                _brokerConfigFactory.DestroyConsumer();
+                stopStart = true;
+                return Console.Out.WriteLineAsync("Consumer Connection Stopped!");
             }
 
-
-           // return Console.Out.WriteLineAsync("Greetings from HelloJob!");
         }
-    }
 
-    class ConsoleLogProvider : ILogProvider
-    {
-        public Logger GetLogger(string name)
+        class ConsoleLogProvider : ILogProvider
         {
-            return (level, func, exception, parameters) =>
+            public Logger GetLogger(string name)
             {
-                if (level >= LogLevel.Info && func != null)
+                return (level, func, exception, parameters) =>
                 {
-                    Console.WriteLine("[" + DateTime.Now.ToLongTimeString() + "] [" + level + "] " + func(), parameters);
-                }
-                return true;
-            };
-        }
+                    if (level >= LogLevel.Info && func != null)
+                    {
+                        Console.WriteLine("[" + DateTime.Now.ToLongTimeString() + "] [" + level + "] " + func(), parameters);
+                    }
+                    return true;
+                };
+            }
 
-        public IDisposable OpenNestedContext(string message)
-        {
-            throw new NotImplementedException();
-        }
+            public IDisposable OpenNestedContext(string message)
+            {
+                throw new NotImplementedException();
+            }
 
-        public IDisposable OpenMappedContext(string key, object value, bool destructure = false)
-        {
-            throw new NotImplementedException();
+            public IDisposable OpenMappedContext(string key, object value, bool destructure = false)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }

@@ -1,9 +1,10 @@
 using System;
+using Apache.NMS;
 
 namespace EisCore.Application.Interfaces
 {
-    public interface IEventProcessor: IDisposable
+    public interface IEventProcessor
     {
-         void RunConsumerEventListener();        
+         void RunConsumerEventListener(IMessageConsumer consumer);        
     }
 }
