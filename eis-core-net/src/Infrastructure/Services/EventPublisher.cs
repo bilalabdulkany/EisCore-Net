@@ -22,12 +22,12 @@ namespace EisCore
         //readonly IApplicationDbContext _appDbContext;
         private readonly ILogger<EventPublisher> _log;
 
-        private readonly IBrokerConfigFactory _brokerConfigFactory;
+        private readonly IBrokerConnectionFactory _brokerConfigFactory;
 
         protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
         private bool isDisposed = false;
 
-        public EventPublisher(ILogger<EventPublisher> log, IConfigurationManager configManager, IBrokerConfigFactory brokerConfigFactory)        {
+        public EventPublisher(ILogger<EventPublisher> log, IConfigurationManager configManager, IBrokerConnectionFactory brokerConfigFactory)        {
             //this._appDbContext=appDbContext;
             this._log = log;
             this._brokerConfigFactory=brokerConfigFactory;

@@ -6,8 +6,10 @@ namespace EisCore.Application.Interfaces
 {
     public interface IApplicationDbContext
     {
-         Task<IEnumerable<Event>> Get();
-         Task Create(Event eisevent);
+         void InsertEntry(string eisGroupKey);
+         void KeepAliveEntry(bool isStarted, string eisGroupKey);
+         void DeleteStaleEntry(string eisGroupKey, string eisGroupRefreshInterval);
+         string GetIPAddressOfServer(string eisGroupKey, string eisGroupRefreshInterval);
 
     }
 }

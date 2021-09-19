@@ -8,10 +8,10 @@ using Microsoft.Extensions.Logging;
 
 namespace EisCore.Infrastructure.Configuration
 {
-    public class BrokerConfigFactory : IBrokerConfigFactory
+    public class BrokerConnectionFactory : IBrokerConnectionFactory
     {
         private bool isDisposed = false;
-        private readonly ILogger<BrokerConfigFactory> _log;
+        private readonly ILogger<BrokerConnectionFactory> _log;
         private BrokerConfiguration _brokerConfiguration;
         private ApplicationSettings _appSettings;
         readonly IConfigurationManager _configManager;
@@ -33,7 +33,7 @@ namespace EisCore.Infrastructure.Configuration
 
         private readonly IEventProcessor _eventProcessor;
 
-        public BrokerConfigFactory(ILogger<BrokerConfigFactory> log,
+        public BrokerConnectionFactory(ILogger<BrokerConnectionFactory> log,
         IConfigurationManager configurationManager, BrokerConfiguration brokerConfig, IEventProcessor eventProcessor)
         {
             this._log = log;
@@ -138,7 +138,7 @@ namespace EisCore.Infrastructure.Configuration
             }
             catch (Exception ex)
             {
-                _log.LogError("Error while disposing the conneciton");
+                _log.LogError("Error while disposing the conneciton",ex.StackTrace);
             }
         }
 

@@ -36,6 +36,7 @@
     <ItemGroup>
     <EmbeddedResource Include="eissettings.json" />
     <EmbeddedResource Include="eissettings.continuous.json" />
+     <EmbeddedResource Include="schema.sql"/>
   </ItemGroup>
 
 

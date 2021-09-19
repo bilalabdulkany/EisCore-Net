@@ -2,7 +2,7 @@ using System;
 using Apache.NMS;
 namespace EisCore.Application.Interfaces
 {
-    public interface IBrokerConfigFactory : IDisposable
+    public interface IBrokerConnectionFactory : IDisposable
     {
         IConnection _ConsumerConnection { get; set; }
         IConnection _ProducerConnection { get; set; }

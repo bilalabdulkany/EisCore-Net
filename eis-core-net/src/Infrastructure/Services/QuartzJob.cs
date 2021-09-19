@@ -10,10 +10,9 @@ namespace EisCore.Infrastructure.Services
 {
     public class QuartzJob : IJob
     {
-        private readonly IBrokerConfigFactory _brokerConfigFactory;
-        public QuartzJob(IServiceProvider provider, IBrokerConfigFactory brokerConfigFactory)
-        {
-            //TODO https://andrewlock.net/using-scoped-services-inside-a-quartz-net-hosted-service-with-asp-net-core/
+        private readonly IBrokerConnectionFactory _brokerConfigFactory;
+        public QuartzJob(IServiceProvider provider, IBrokerConnectionFactory brokerConfigFactory)
+        {            
             this._brokerConfigFactory = brokerConfigFactory;
         }
 
@@ -23,7 +22,7 @@ namespace EisCore.Infrastructure.Services
         {
             Console.Out.WriteLineAsync("#########Consumer Connection Quartz Job...");
 
-
+            //TODO - create atomic bool to handle the consumer creation with the same client id..
             // _brokerConfigFactory._ConsumerConnection.Start();
             if (stopStart)
             {

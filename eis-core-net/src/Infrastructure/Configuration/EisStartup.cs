@@ -16,13 +16,13 @@ namespace EisCore.Infrastructure.Configuration
         public static void ConfigureServices(IServiceCollection services, IConfiguration Configuration)
         {
             services.AddSingleton<IConfigurationManager, ConfigurationManager>();
-            services.AddSingleton<IBrokerConfigFactory, BrokerConfigFactory>();
-            //services.AddSingleton<IDatabaseBootstrap, DatabaseBootstrap>();              
+            services.AddSingleton<IBrokerConnectionFactory, BrokerConnectionFactory>();
+            services.AddSingleton<IDatabaseBootstrap, DatabaseBootstrap>();              
             services.AddSingleton<IEventProcessor, EventProcessor>();
             services.AddSingleton<IEventPublisher, EventPublisher>();
             services.AddSingleton<BrokerConfiguration>();
             services.AddSingleton<EventHandlerRegistry>();
-            //services.AddSingleton<IApplicationDbContext,ApplicationDbContext>();
+            services.AddSingleton<IApplicationDbContext,ApplicationDbContext>();
 
 
             services.AddSingleton<IJobFactory, JobFactory>();
@@ -41,31 +41,11 @@ namespace EisCore.Infrastructure.Configuration
             });
             // Add the required Quartz.NET services
 
-
-
             services.AddSingleton<QuartzJob>();
             services.AddSingleton(new JobSchedule(
        jobType: typeof(QuartzJob),
-       cronExpression: "0/15 * * * * ?")); // run every 5 seconds
-
-            /* services.AddQuartz(q =>
-             {
-                 // Use a Scoped container to create jobs. I'll touch on this later
-                 //q.UseMicrosoftDependencyInjectionScopedJobFactory();
-                 var jobKey = new JobKey("HelloWorldJob");
-
-                 // Register the job with the DI container
-                 q.AddJob<QuartzJob>(opts => opts.WithIdentity(jobKey));
-
-                 // Create a trigger for the job
-                 q.AddTrigger(opts => opts
-                     .ForJob(jobKey) // link to the HelloWorldJob
-                     .WithIdentity("HelloWorldJob-trigger") // give the trigger a unique name
-                     .WithCronSchedule("0/10 * * * * ?")); // run every 5 seconds                    
-             });
-             services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
- */
-
+       cronExpression: "0/10 * * * * ?")); // run every 10 seconds
+         
         }
     }
 }
