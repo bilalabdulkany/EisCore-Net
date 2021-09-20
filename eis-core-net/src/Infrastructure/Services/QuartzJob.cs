@@ -33,6 +33,9 @@ namespace EisCore.Infrastructure.Services
             {
                 _dbContext.InsertEntry(SourceSystemName.MDM);
                 _dbContext.KeepAliveEntry(stopStart,SourceSystemName.MDM);
+               //_dbContext.DeleteStaleEntry(SourceSystemName.MDM,"2");
+               //var result=_dbContext.GetIPAddressOfServer(SourceSystemName.MDM,"2");
+               
                 _brokerConfigFactory.CreateConsumer();
                 stopStart = false;
                 return Console.Out.WriteLineAsync("Consumer Connection started!");

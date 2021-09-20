@@ -30,6 +30,9 @@ namespace EisCore.Infrastructure.Persistence
                 _databaseName="Data Source=TestCore.sqlite";
             }
             HostIp = this._configuration["environment:profile"];
+            if(HostIp==null){
+                HostIp="development";
+            }
         }
 
         public async void InsertEntry(string eisGroupKey)
@@ -70,23 +73,21 @@ namespace EisCore.Infrastructure.Persistence
             {
                 try
                 {
-                    string startStatus = isStarted ? "1" : "0";
+                    int startStatus = isStarted ? 1 : 0;
                     _log.LogInformation("Keep Alive Entry..");
 
                     string sql = "UPDATE EIS_COMPETING_CONSUMER_GROUP SET LAST_ACCESSED_TIMESTAMP = CURRENT_TIMESTAMP WHERE " +
                    "GROUP_KEY=@eisGroupKey AND HOST_IP_ADDRESS= @HostIp AND 1=@startStatus";
 
-                    string sqlite = @"UPDATE EIS_COMPETING_CONSUMER_GROUP 
-                    SET LAST_ACCESSED_TIMESTAMP = datetime('now','localtime') WHERE  
-                    GROUP_KEY=@eisGroupKey AND HOST_IP_ADDRESS=@HostIp AND 1=@startStatus";
-
-                    //sqlite = "UPDATE EIS_COMPETING_CONSUMER_GROUP SET LAST_ACCESSED_TIMESTAMP = datetime('now','localtime') WHERE GROUP_KEY='MDM' AND HOST_IP_ADDRESS= 'development' AND 1=1";
+                      string sqlite = "UPDATE EIS_COMPETING_CONSUMER_GROUP SET LAST_ACCESSED_TIMESTAMP = datetime('now','localtime') WHERE " +
+                  "GROUP_KEY=CAST(@eisGroupKey AS VARCHAR(50)) AND HOST_IP_ADDRESS= CAST(@HostIp AS VARCHAR(255)) AND 1=@startStatus";
 
 
-                    _log.LogInformation("eisGroupKey, HostIp, startStatus "+ eisGroupKey +  HostIp +  startStatus);
-                    var executestatus = await connection.ExecuteAsync(sqlite, new { eisGroupKey, HostIp, startStatus });
-                    //var executestatus = await connection.ExecuteAsync(sqlite);
-                    _log.LogInformation("executestatus::: " + executestatus );
+                    
+                    _log.LogInformation("Executing query: {sql} with variables {a},{b},{c}", sqlite,eisGroupKey,HostIp,startStatus);
+                    
+                    var executestatus = await connection.ExecuteAsync(sqlite,new{eisGroupKey,HostIp,startStatus});
+                    _log.LogInformation("executestatus: " +executestatus);
                 }
                 catch (Exception e)
                 {
@@ -110,10 +111,11 @@ namespace EisCore.Infrastructure.Persistence
                     string sqlite = "DELETE FROM EIS_COMPETING_CONSUMER_GROUP WHERE  " +
                     "(strftime('%M','now','localtime')-strftime('%M',LAST_ACCESSED_TIMESTAMP))<=@eisGroupRefreshInterval " +
                     "AND GROUP_KEY=@eisGroupKey";
-                    _log.LogInformation("Executing query: {sql} with variables {a},{b}", sqlite,eisGroupKey,eisGroupRefreshInterval);
+                    _log.LogInformation("Executing query: {sql} with variables {a},{b}", sqlite,eisGroupRefreshInterval,eisGroupKey);
 
 
-                    connection.Execute(sqlite, new { eisGroupRefreshInterval, eisGroupKey });
+                    var executestatus = connection.Execute(sqlite, new { eisGroupRefreshInterval, eisGroupKey });
+                    _log.LogInformation("executestatus: " +executestatus);
                 }
                 catch (Exception e)
                 {
@@ -130,14 +132,18 @@ namespace EisCore.Infrastructure.Persistence
             {
                 try
                 {
-                    _log.LogInformation("Quering Event table");
+                    
                     string sql="SELECT HOST_IP_ADDRESS FROM EIS_COMPETING_CONSUMER_GROUP WHERE GROUP_KEY=@eisGroupKey " +
                     "AND EXTRACT(MINUTE FROM (CURRENT_TIMESTAMP - LAST_ACCESSED_TIMESTAMP))<=@eisGroupRefreshInterval";
 
                     string sqlite="SELECT HOST_IP_ADDRESS FROM EIS_COMPETING_CONSUMER_GROUP WHERE GROUP_KEY=@eisGroupKey " +
-                    "AND EXTRACT(MINUTE FROM (CURRENT_TIMESTAMP - LAST_ACCESSED_TIMESTAMP))<=@eisGroupRefreshInterval";
-                    _log.LogInformation("Executing query: {sql} with variables {a},{b}", sqlite,eisGroupKey);
-                    return connection.QuerySingleOrDefault<string>(sqlite, new { eisGroupKey, eisGroupRefreshInterval });
+                    "AND (strftime('%M','now','localtime')-strftime('%M',LAST_ACCESSED_TIMESTAMP))<=@eisGroupRefreshInterval";
+                    
+                    _log.LogInformation("Executing query: {sql} with variables {a},{b}", sqlite,eisGroupKey,eisGroupRefreshInterval);
+                    
+                    string result=connection.QuerySingleOrDefault<string>(sqlite, new { eisGroupKey, eisGroupRefreshInterval });
+                    _log.LogInformation("Query result {a}",result);
+                    return result;
                 }
                 catch (Exception e)
                 {

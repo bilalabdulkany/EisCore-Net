@@ -114,7 +114,7 @@ namespace EisCore.Infrastructure.Configuration
             _ConsumerConnection.Start();
             if (_ConsumerConnection.IsStarted)
             {
-                _log.LogInformation("consuler connection started");
+                _log.LogInformation("consumer connection started");
             }
             else
             {

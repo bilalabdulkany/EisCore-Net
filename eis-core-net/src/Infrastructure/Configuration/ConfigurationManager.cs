@@ -17,23 +17,23 @@ namespace EisCore.Infrastructure.Configuration
 {
     public class ConfigurationManager : IConfigurationManager
     {
-       
+
         private bool isDisposed = false;
         private ILogger<ConfigurationManager> _log;
         private BrokerConfiguration _brokerConfiguration;
         private ApplicationSettings _appSettings;
         private IConfiguration _configuration;
-       
+
 
         public ConfigurationManager(ILogger<ConfigurationManager> log, IConfiguration configuration)
         {
 
             this._log = log;
             //this._brokerConfiguration = brokerConfig;
-            this._configuration=configuration;
+            this._configuration = configuration;
 
             _log.LogInformation("ConfigurationManager constructor");
-            BindAppSettingsToObjects();           
+            BindAppSettingsToObjects();
         }
 
         private void BindAppSettingsToObjects()
@@ -47,23 +47,23 @@ namespace EisCore.Infrastructure.Configuration
             Stream stream = assembly.GetManifestResourceStream(name);
             configurationBuilder.AddJsonStream(stream);
             var brokerConfigSection = configurationBuilder.Build();
-            var brokerConfig=new BrokerConfiguration();
+            var brokerConfig = new BrokerConfiguration();
             brokerConfigSection.GetSection("BrokerConfiguration").Bind(brokerConfig);
-            _brokerConfiguration=brokerConfig;
+            _brokerConfiguration = brokerConfig;
             var AppSettingsList = new List<ApplicationSettings>();
             brokerConfigSection.GetSection("ApplicationSettings").Bind(AppSettingsList);
             _appSettings = GetAppSettingsFromList(AppSettingsList);
-            var environment = this._configuration["environment:profile"];            
-            if(environment != null) {
-                name = assemblyName + ".eissettings."+ environment + ".json";
-                _log.LogInformation("loading : {n}" ,name);
+            var environment = this._configuration["environment:profile"];
+            if (environment != null)
+            {
+                name = assemblyName + ".eissettings." + environment + ".json";
+                _log.LogInformation("loading : {n}", name);
                 stream = assembly.GetManifestResourceStream(name);
-                configurationBuilder.AddJsonStream(stream);            
+                configurationBuilder.AddJsonStream(stream);
             }
-            
 
         }
-       
+
         public string GetBrokerUrl()
         {
 
@@ -97,7 +97,7 @@ namespace EisCore.Infrastructure.Configuration
             return this._appSettings;
         }
 
-     
+
 
 
 
@@ -106,7 +106,7 @@ namespace EisCore.Infrastructure.Configuration
         public void Dispose()
         {
             if (!this.isDisposed)
-            {               
+            {
                 this.isDisposed = true;
             }
         }
