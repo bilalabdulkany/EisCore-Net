@@ -5,15 +5,20 @@ using Quartz.Impl;
 using Quartz.Logging;
 using EisCore.Application.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using EisCore.Application.Constants;
 
 namespace EisCore.Infrastructure.Services
 {
+
+    [DisallowConcurrentExecution]
     public class QuartzJob : IJob
     {
         private readonly IBrokerConnectionFactory _brokerConfigFactory;
-        public QuartzJob(IServiceProvider provider, IBrokerConnectionFactory brokerConfigFactory)
+        private readonly IApplicationDbContext _dbContext;
+        public QuartzJob(IBrokerConnectionFactory brokerConfigFactory,IApplicationDbContext dbContext)
         {            
             this._brokerConfigFactory = brokerConfigFactory;
+            this._dbContext=dbContext;
         }
 
         private Boolean stopStart = true;
@@ -26,6 +31,8 @@ namespace EisCore.Infrastructure.Services
             // _brokerConfigFactory._ConsumerConnection.Start();
             if (stopStart)
             {
+                _dbContext.InsertEntry(SourceSystemName.MDM);
+                _dbContext.KeepAliveEntry(stopStart,SourceSystemName.MDM);
                 _brokerConfigFactory.CreateConsumer();
                 stopStart = false;
                 return Console.Out.WriteLineAsync("Consumer Connection started!");
