@@ -70,15 +70,12 @@ namespace EisCore.Infrastructure.Persistence
             {
                 try
                 {
-                    string startStatus = isStarted ? "1" : "0";
+                    int startStatus = isStarted ? 1 : 0;
                     _log.LogInformation("Keep Alive Entry..");
 
-                    string sql = "UPDATE EIS_COMPETING_CONSUMER_GROUP SET LAST_ACCESSED_TIMESTAMP = CURRENT_TIMESTAMP WHERE " +
-                   "GROUP_KEY=@eisGroupKey AND HOST_IP_ADDRESS= @HostIp AND 1=@startStatus";
-
                     string sqlite = @"UPDATE EIS_COMPETING_CONSUMER_GROUP 
-                    SET LAST_ACCESSED_TIMESTAMP = datetime('now','localtime') WHERE  
-                    GROUP_KEY=@eisGroupKey AND HOST_IP_ADDRESS=@HostIp AND 1=@startStatus";
+                    SET LAST_ACCESSED_TIMESTAMP = datetime('now','localtime') 
+                    WHERE GROUP_KEY=@eisGroupKey AND HOST_IP_ADDRESS=@HostIp AND 1=@startStatus";
 
                     //sqlite = "UPDATE EIS_COMPETING_CONSUMER_GROUP SET LAST_ACCESSED_TIMESTAMP = datetime('now','localtime') WHERE GROUP_KEY='MDM' AND HOST_IP_ADDRESS= 'development' AND 1=1";
 
