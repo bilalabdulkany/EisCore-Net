@@ -22,8 +22,7 @@ namespace EisCore.Infrastructure.Configuration
         private ILogger<ConfigurationManager> _log;
         private BrokerConfiguration _brokerConfiguration;
         private ApplicationSettings _appSettings;
-        private IConfiguration _configuration;
-
+        private IConfiguration _configuration;       
 
         public ConfigurationManager(ILogger<ConfigurationManager> log, IConfiguration configuration)
         {
@@ -49,6 +48,8 @@ namespace EisCore.Infrastructure.Configuration
             var brokerConfigSection = configurationBuilder.Build();
             var brokerConfig = new BrokerConfiguration();
             brokerConfigSection.GetSection("BrokerConfiguration").Bind(brokerConfig);
+            //_refreshInterval=brokerConfigSection.GetSection("eis").GetValue<int>("RefreshInterval");
+
             _brokerConfiguration = brokerConfig;
             var AppSettingsList = new List<ApplicationSettings>();
             brokerConfigSection.GetSection("ApplicationSettings").Bind(AppSettingsList);
@@ -61,6 +62,7 @@ namespace EisCore.Infrastructure.Configuration
                 stream = assembly.GetManifestResourceStream(name);
                 configurationBuilder.AddJsonStream(stream);
             }
+            
 
         }
 
@@ -98,9 +100,6 @@ namespace EisCore.Infrastructure.Configuration
         }
 
 
-
-
-
         #region IDisposable Members
 
         public void Dispose()
@@ -110,7 +109,6 @@ namespace EisCore.Infrastructure.Configuration
                 this.isDisposed = true;
             }
         }
-
 
         #endregion
     }

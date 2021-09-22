@@ -9,7 +9,7 @@ namespace EisCore.Application.Interfaces
         IMessageProducer CreateProducer();
         ITextMessage GetTextMessageRequest(string message);
         void CreateConsumer();
-        void DestroyConsumer();
+        void DestroyConsumerConnection();
 
 
     }

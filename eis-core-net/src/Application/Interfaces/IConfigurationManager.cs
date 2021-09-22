@@ -8,7 +8,7 @@ namespace EisCore.Application.Interfaces
         string GetBrokerUrl();
         ApplicationSettings GetAppSettings();
         BrokerConfiguration GetBrokerConfiguration();
-        void Dispose();   
+        void Dispose();         
        
 
     }

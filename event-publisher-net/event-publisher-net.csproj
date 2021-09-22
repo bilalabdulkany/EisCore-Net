@@ -21,6 +21,5 @@
     <ProjectReference Include="..\eis-core-net\eis-core-net.csproj" />
   </ItemGroup>
 
-
   
 </Project>

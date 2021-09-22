@@ -22,9 +22,6 @@ namespace EisCore.Infrastructure.Configuration
         public IConnection _ConsumerConnection { get; set; }
         public IConnection _ProducerConnection { get; set; }
         private IConnectionFactory _factory;
-
-
-
         protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
         protected static AutoResetEvent semaphore = new AutoResetEvent(false);
 
@@ -49,20 +46,20 @@ namespace EisCore.Infrastructure.Configuration
             Uri connecturi = new Uri(brokerUrl);
             IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(connecturi);
             _factory = factory;
-            CreateProducerConnection();            
+            CreateProducerConnection();
         }
 
         private void CreateProducerConnection()
         {
-            IConnection ConsumerTcpConnection = null;
-            ISession ConsumerTcpSession = null;
+            //IConnection ConsumerTcpConnection = null;
+            //ISession ConsumerTcpSession = null;
 
             IConnection ProducerTcpConnection = null;
             ISession ProducerTcpSession = null;
             try
             {
                 ProducerTcpConnection = _factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
-                ProducerTcpConnection.ClientId = "Producer_Connection";
+                //ProducerTcpConnection.ClientId = "Producer_Connection";
 
                 if (ProducerTcpConnection.IsStarted)
                 {
@@ -95,7 +92,6 @@ namespace EisCore.Infrastructure.Configuration
                 finally
                 {
                     ProducerTcpConnection.Dispose();
-
                 }
             }
             catch (Exception e)
@@ -106,44 +102,78 @@ namespace EisCore.Infrastructure.Configuration
 
         public void CreateConsumer()
         {
-            var ConsumerTcpConnection = _factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
-            ConsumerTcpConnection.ClientId = "Consumer_Connection";
-            var ConsumerTcpSession = ConsumerTcpConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
-            _ConsumerConnection = ConsumerTcpConnection;
-            _ConsumerSession = ConsumerTcpSession;
-            _ConsumerConnection.Start();
-            if (_ConsumerConnection.IsStarted)
+            try
             {
-                _log.LogInformation("consumer connection started");
+                if (_ConsumerConnection!=null)
+                    _log.LogInformation("_ConsumerConnection.IsStarted: "+ _ConsumerConnection.IsStarted);
+
+                if (_ConsumerConnection!=null && _ConsumerConnection.IsStarted) {
+                    return;
+                }
+                var ConsumerTcpConnection = _factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);                
+                ConsumerTcpConnection.ConnectionInterruptedListener += new ConnectionInterruptedListener(OnConnectionInterruptedListener);
+                ConsumerTcpConnection.ConnectionResumedListener += new ConnectionResumedListener(OnConnectionResumedListener);
+                ConsumerTcpConnection.ExceptionListener += new ExceptionListener(OnExceptionListener);
+                                 
+                ConsumerTcpConnection.ClientId = "Consumer_Connection";                
+
+                var ConsumerTcpSession = ConsumerTcpConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
+                _ConsumerConnection = ConsumerTcpConnection;
+                _ConsumerSession = ConsumerTcpSession;
+                _ConsumerConnection.Start();
+                if (_ConsumerConnection.IsStarted)
+                {
+                    _log.LogInformation("consumer connection started");
+                }
+                else
+                {
+                    _log.LogInformation("consumer connection not started, starting");
+                }
+                var Queue = this._appSettings.InboundQueue;
+                var QueueDestination = SessionUtil.GetQueue(_ConsumerSession, Queue);
+                _log.LogInformation("Created MessageProducer for Destination Queue: {d}", QueueDestination);
+                _consumer = _ConsumerSession.CreateConsumer(QueueDestination);
+                _eventProcessor.RunConsumerEventListener(_consumer);
             }
-            else
+            catch (Exception e)
             {
-                _log.LogInformation("consumer connection not started, starting");
+                _log.LogCritical("Error occurred when creating Consumer: {e}", e.StackTrace);
+               DestroyConsumerConnection();
+               throw e;
             }
-            var Queue = this._appSettings.InboundQueue;
-            var QueueDestination = SessionUtil.GetQueue(_ConsumerSession, Queue);
-            _log.LogInformation("Created MessageProducer for Destination Queue: {d}", QueueDestination);
-            _consumer = _ConsumerSession.CreateConsumer(QueueDestination);
-            _eventProcessor.RunConsumerEventListener(_consumer);
         }
 
 
-        public void DestroyConsumer()
+        public void DestroyConsumerConnection()
         {
             try
             {
-                _ConsumerConnection.Stop();
-                _ConsumerConnection.Close();
-                _ConsumerConnection.Dispose();
+                _log.LogInformation("DestroyConsumerConnection - checking current consumer connection..");
+                
+                if (_ConsumerConnection != null)
+                {
+                    _ConsumerConnection.Stop();
+                    _ConsumerConnection.Close();
+                    _ConsumerConnection.Dispose();
+                    _log.LogInformation("DestroyConsumerConnection - connection disposed");
+                }
+
             }
             catch (Exception ex)
             {
-                _log.LogError("Error while disposing the conneciton",ex.StackTrace);
+                _log.LogError("Error while disposing the connection", ex.StackTrace);
+            }
+            finally
+            {
+                if (_ConsumerConnection != null) {
+                _ConsumerConnection.Dispose();
+                }
             }
         }
 
         public IMessageProducer CreateProducer()
         {
+            try{
             var topic = _configManager.GetAppSettings().OutboundTopic;
             var TopicDestination = SessionUtil.GetTopic(_ProducerSession, topic);
             _ProducerConnection.Start();
@@ -156,6 +186,10 @@ namespace EisCore.Infrastructure.Configuration
             _publisher.RequestTimeout = receiveTimeout;
             _log.LogInformation("Created MessageProducer for Destination Topic: {d}", TopicDestination);
             return _publisher;
+            } catch (Exception e){
+                _log.LogCritical("Error occurred while creating producer: "+e.StackTrace);
+                throw e;
+            }
         }
 
         public ITextMessage GetTextMessageRequest(string message)
@@ -167,23 +201,19 @@ namespace EisCore.Infrastructure.Configuration
             return request;
         }
 
-        protected void OnConnectionInterruptedListener()
-        {
-            _log.LogDebug("Connection Interrupted.. Trying to reconnect");
+        protected void OnConnectionInterruptedListener() {
+            _log.LogInformation("Connection Interrupted.");
+            _ConsumerConnection = null;
             // CreateAsyncBrokerConnection();
-
         }
-        protected void OnConnectionResumedListener()
-        {
-            _log.LogDebug("Connection Resumed");
+        protected void OnConnectionResumedListener() {
+            _log.LogInformation("Connection Resumed.");
         }
-        protected void OnExceptionListener(Exception NMSException)
-        {
-            _log.LogError("On Exception Listener: {e}", NMSException.GetBaseException());
+        protected void OnExceptionListener(Exception NMSException) {
+            _log.LogInformation("On Exception Listener: {e}", NMSException.GetBaseException());
             //    CreateAsyncBrokerConnection();
+            _ConsumerConnection = null;
         }
-
-
 
         #region IDisposable Members
 
