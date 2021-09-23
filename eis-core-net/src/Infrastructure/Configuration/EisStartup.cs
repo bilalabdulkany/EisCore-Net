@@ -7,6 +7,7 @@ using Quartz;
 using EisCore.Infrastructure.Services;
 using Quartz.Impl;
 using Quartz.Spi;
+using System.Collections.Specialized;
 
 namespace EisCore.Infrastructure.Configuration
 {
@@ -26,7 +27,14 @@ namespace EisCore.Infrastructure.Configuration
 
 
             services.AddSingleton<IJobFactory, JobFactory>();
-            services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+
+            var properties = new NameValueCollection();
+            properties["quartz.scheduler.instanceName"] = "ConsumerQuartzScheduler";
+            properties["quartz.scheduler.instanceId"] = "ConsumerQuartzInstance";
+            properties["quartz.threadPool.threadCount"] = "1";
+            services.AddSingleton<ISchedulerFactory>(sf => new StdSchedulerFactory(properties));
+
+            //services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
             services.AddHostedService<QuartzHostedService>();
             // base configuration from appsettings.json
             //services.Configure<QuartzOptions>(Configuration.GetSection("Quartz"));

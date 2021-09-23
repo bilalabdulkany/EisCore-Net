@@ -32,9 +32,9 @@ namespace EisCore.Infrastructure.Services
 
         private Boolean stopStart = true;
 
-        public Task Execute(IJobExecutionContext context)
+        public async Task Execute(IJobExecutionContext context)
         {
-            Console.Out.WriteLineAsync("#########Consumer Connection Quartz Job... Cron: ["+_configManager.GetBrokerConfiguration().CronExpression+"]");
+            await Console.Out.WriteLineAsync("#########Consumer Connection Quartz Job... Cron: ["+_configManager.GetBrokerConfiguration().CronExpression+"]");
 
             //TODO Testing only with one System: XYZ
             var eisGroupKey = SourceSystemName.MDM + "_COMPETING_CONSUMER_GROUP";
@@ -45,7 +45,6 @@ namespace EisCore.Infrastructure.Services
                 //TODO put the hostIP
                 var hostIP =testHostIp;// _dbContext.GetIPAddressOfServer(eisGroupKey, refreshInterval);
                 var deleteResult = _dbContext.DeleteStaleEntry(eisGroupKey, refreshInterval);
-                _log.LogInformation("Stale interval:{r}",refreshInterval);
                 _log.LogInformation("Stale entry delete status:{r}",deleteResult.Result);
                 var insertResult = _dbContext.InsertEntry(eisGroupKey);
 
@@ -60,7 +59,6 @@ namespace EisCore.Infrastructure.Services
                     if (IpAddress != null)
                     {
                          _log.LogInformation("IsIPAddressMatchesWithGroupEntry(IpAddress): " +  IsIPAddressMatchesWithGroupEntry(IpAddress));
-                          _log.LogInformation("Current IP Address: {a}",testHostIp);
                         if (!IsIPAddressMatchesWithGroupEntry(IpAddress))
                         {
                             _brokerConfigFactory.DestroyConsumerConnection();
@@ -78,7 +76,8 @@ namespace EisCore.Infrastructure.Services
                         _log.LogInformation("***Connection destroyed");
                     }
                 }
-                return Console.Out.WriteLineAsync("exiting QuartzKeepAliveEntryJob");
+                await Console.Out.WriteLineAsync("exiting QuartzKeepAliveEntryJob");
+                return;
             }
             catch (Exception e)
             {
@@ -86,11 +85,12 @@ namespace EisCore.Infrastructure.Services
                 _brokerConfigFactory.DestroyConsumerConnection();
                 _log.LogCritical("Consumer connection stopped on IP: ");
             }
-            return Console.Out.WriteLineAsync("exception when creating consumer");
+            await Console.Out.WriteLineAsync("exception when creating consumer");
+            return;
         }
 
         private bool IsIPAddressMatchesWithGroupEntry(string ipAddress)
-        {  
+        {
             return ipAddress.Equals(testHostIp);
             //TODO revert after testing
             //return ipAddress.Equals(UtilityClass.GetLocalIpAddress());           
