@@ -1,6 +1,8 @@
 using System;
 using System.Threading;
 using Apache.NMS;
+using Apache.NMS.ActiveMQ;
+using Apache.NMS.ActiveMQ.Transport;
 using Apache.NMS.Util;
 using EisCore.Application.Interfaces;
 using EisCore.Domain.Entities;
@@ -30,6 +32,8 @@ namespace EisCore.Infrastructure.Configuration
 
         private readonly IEventProcessor _eventProcessor;
 
+        CustomConnectionFactory _consumerConnFactory = null;
+
         public BrokerConnectionFactory(ILogger<BrokerConnectionFactory> log,
         IConfigurationManager configurationManager, BrokerConfiguration brokerConfig, IEventProcessor eventProcessor)
         {
@@ -43,11 +47,13 @@ namespace EisCore.Infrastructure.Configuration
             var brokerUrl = _configManager.GetBrokerUrl();
             _log.LogInformation("Broker - {brokerUrl}", brokerUrl);
 
+            _consumerConnFactory = new CustomConnectionFactory();
             Uri connecturi = new Uri(brokerUrl);
             IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(connecturi);
             _factory = factory;
             _ConsumerConnection = null;
             CreateProducerConnection();
+            
         }
 
         private void CreateProducerConnection()
@@ -110,11 +116,16 @@ namespace EisCore.Infrastructure.Configuration
                 }
                 if (_ConsumerConnection != null) {
                     _log.LogInformation("_ConsumerConnection.IsStarted: " + _ConsumerConnection.IsStarted);
-                    _ConsumerConnection.Stop();
+                    DestroyConsumerConnection();
                     _log.LogInformation("_ConsumerConnection Stopped" );
                 }
                 _log.LogInformation("Creating new consumer broker connection");
-                _ConsumerConnection = _factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
+                var brokerUrl = _configManager.GetBrokerUrl();
+                _log.LogInformation("Broker - {brokerUrl}", brokerUrl);
+
+                CustomConnectionFactory _consumerConnFactory = new CustomConnectionFactory();
+                Uri connecturi = new Uri(brokerUrl);                
+                _ConsumerConnection = _consumerConnFactory.CreateActiveMQConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password, connecturi);
                 _ConsumerConnection.ClientId = "Consumer_Connection";
                 _log.LogInformation("connection created, client id set");
 
@@ -148,25 +159,6 @@ namespace EisCore.Infrastructure.Configuration
                 throw e;
             }
         }
-
-
-        public void DestroyConsumerConnection()
-        {
-            try
-            {
-                _log.LogInformation("DestroyConsumerConnection - called");
-
-                if (_ConsumerConnection != null) {
-                    _ConsumerConnection.Stop();
-                    _ConsumerConnection.Close();
-                    _ConsumerConnection.Dispose();
-                    _log.LogInformation("DestroyConsumerConnection - connection disposed");
-                }
-            } catch (Exception ex) {
-                _log.LogError("Error while disposing the connection", ex.StackTrace);
-            }
-        }
-
         public IMessageProducer CreateProducer() {
             try {
                 var topic = _configManager.GetAppSettings().OutboundTopic;
@@ -186,12 +178,32 @@ namespace EisCore.Infrastructure.Configuration
                 throw e;
             }
         }
+        public void DestroyConsumerConnection() {
+            try {
+                _log.LogInformation("DestroyConsumerConnection - called: ");
+                ITransport consumerTransport = _consumerConnFactory.getConsumerTransport();
+                 _log.LogInformation("_transport.IsConnected: " + consumerTransport.IsConnected);
+                if(!consumerTransport.IsConnected) {
+                        consumerTransport.Stop();
+                        _log.LogInformation("stopped transport and no further close is needed");
+                } else {
+                    if (_ConsumerConnection != null) {
+                        _log.LogInformation("_con");
+                        _ConsumerConnection.Stop();
+                        _ConsumerConnection.Close();
+                        _ConsumerConnection.Dispose();
+                        _log.LogInformation("DestroyConsumerConnection - connection disposed");
+                    }
+                }
 
+            } catch (Exception ex) {
+                _log.LogError("Error while disposing the connection", ex.StackTrace);
+            }
+        }
         public void DestroyProducerConnection() {
             try {
                 _log.LogInformation("DestroyProducerConnection - called");
-                if (_ProducerConnection != null)
-                {
+                if (_ProducerConnection != null) {
                     _ProducerConnection.Stop();
                     _ProducerConnection.Close();
                     _ProducerConnection.Dispose();
@@ -247,5 +259,94 @@ namespace EisCore.Infrastructure.Configuration
         }
         #endregion
 
+    }
+
+    class CustomConnectionFactory : ConnectionFactory
+    {
+        ITransport _consumerTransport;
+
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return base.ToString();
+        }
+
+        protected override void ConfigureConnection(Connection connection)
+        {
+            base.ConfigureConnection(connection);
+        }
+
+        protected override Connection CreateActiveMQConnection()
+        {
+            return base.CreateActiveMQConnection();
+        }
+
+        protected override Connection CreateActiveMQConnection(string userName, string password)
+        {
+            return base.CreateActiveMQConnection(userName, password);
+        }
+
+        protected override Connection CreateActiveMQConnection(ITransport transport)
+        {
+            return base.CreateActiveMQConnection(transport);
+        }
+
+        public Connection CreateActiveMQConnection(string userName, string password, Uri connecturi) {
+            Connection connection = null;
+            try
+            {
+                ITransport transport = TransportFactory.CreateTransport(connecturi);
+                _consumerTransport = transport;
+                connection = CreateActiveMQConnection(transport);
+
+                ConfigureConnection(connection);
+
+                connection.UserName = userName;
+                connection.Password = password;
+
+                if(base.ClientId != null)
+                {
+                    connection.DefaultClientId = base.ClientId;
+                }
+
+                return connection;
+            }
+            catch(NMSException)
+            {
+                try
+                {
+                    connection.Close();
+                }
+                catch
+                {
+                }
+
+                throw;
+            }
+            catch(Exception e)
+            {
+                try
+                {
+                    connection.Close();
+                }
+                catch
+                {
+                }
+
+                throw NMSExceptionSupport.Create("Could not connect to broker URL: " + "Reason: " + e.Message, e);
+            }
+        }
+        public ITransport getConsumerTransport() {
+            return _consumerTransport;
+        }
     }
 }
