@@ -55,12 +55,8 @@ namespace EisCore.Infrastructure.Configuration
             CreateProducerConnection();
             
         }
-
         private void CreateProducerConnection()
         {
-            //IConnection ConsumerTcpConnection = null;
-            //ISession ConsumerTcpSession = null;
-
             IConnection ProducerTcpConnection = null;
             ISession ProducerTcpSession = null;
             try
@@ -182,20 +178,21 @@ namespace EisCore.Infrastructure.Configuration
             try {
                 _log.LogInformation("DestroyConsumerConnection - called: ");
                 ITransport consumerTransport = _consumerConnFactory.getConsumerTransport();
-                 _log.LogInformation("_transport.IsConnected: " + consumerTransport.IsConnected);
-                if(!consumerTransport.IsConnected) {
-                        consumerTransport.Stop();
-                        _log.LogInformation("stopped transport and no further close is needed");
-                } else {
-                    if (_ConsumerConnection != null) {
-                        _log.LogInformation("_con");
-                        _ConsumerConnection.Stop();
-                        _ConsumerConnection.Close();
-                        _ConsumerConnection.Dispose();
-                        _log.LogInformation("DestroyConsumerConnection - connection disposed");
+                 _log.LogInformation("_transport.IsConnected: " + consumerTransport);
+                if(consumerTransport!=null){
+                    if(!consumerTransport.IsConnected) {
+                            consumerTransport.Stop();
+                            _log.LogInformation("stopped transport and no further close is needed");
+                    } else {
+                        if (_ConsumerConnection != null) {
+                            _log.LogInformation("_con");
+                            _ConsumerConnection.Stop();
+                            _ConsumerConnection.Close();
+                            _ConsumerConnection.Dispose();
+                            _log.LogInformation("DestroyConsumerConnection - connection disposed");
+                        }
                     }
                 }
-
             } catch (Exception ex) {
                 _log.LogError("Error while disposing the connection", ex.StackTrace);
             }
