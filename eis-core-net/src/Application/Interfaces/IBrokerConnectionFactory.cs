@@ -4,8 +4,8 @@ namespace EisCore.Application.Interfaces
 {
     public interface IBrokerConnectionFactory : IDisposable
     {
-        IConnection _ConsumerConnection { get; set; }
-        IConnection _ProducerConnection { get; set; }
+        //IConnection _ConsumerConnection { get; set; }
+        //IConnection _ProducerConnection { get; set; }
         IMessageProducer CreateProducer();
         ITextMessage GetTextMessageRequest(string message);
         void CreateConsumer();

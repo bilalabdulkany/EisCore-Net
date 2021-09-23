@@ -104,8 +104,6 @@ namespace EisCore.Infrastructure.Persistence
             {
                 try
                 {
-                    _log.LogInformation("Deleting Record Due to stale entry...");
-
                     string sql = "DELETE FROM EIS_COMPETING_CONSUMER_GROUP WHERE  " +
                     "EXTRACT(MINUTE FROM (CURRENT_TIMESTAMP - LAST_ACCESSED_TIMESTAMP))<=@eisGroupRefreshInterval " +
                     "AND GROUP_KEY=@eisGroupKey";
