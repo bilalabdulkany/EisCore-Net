@@ -6,7 +6,7 @@ namespace EisCore.Application.Interfaces
     {
         //IConnection _ConsumerConnection { get; set; }
         //IConnection _ProducerConnection { get; set; }
-        IMessageProducer CreateProducer();
+        IMessageProducer CreatePublisher();
         ITextMessage GetTextMessageRequest(string message);
         void CreateConsumer();
         void DestroyConsumerConnection();

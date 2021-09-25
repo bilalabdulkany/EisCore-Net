@@ -1,10 +1,10 @@
 {
     "BrokerConfiguration": {     
         "protocol": "failover:(tcp://",
-        "url": "localhost:61616)?transport.timeout=10&&transport.startupMaxReconnectAttempts=1&connection.AsyncSend=true&connection.AsyncClose=true",
+        "url": "localhost:61616)?transport.timeout=20000&&transport.startupMaxReconnectAttempts=4&connection.AsyncSend=true&connection.AsyncClose=true",
         "username": "admin",
         "password": "admin",
-        "CronExpression":"0/20 * 1/1 ? * *",
+        "CronExpression":"0/10 * 1/1 ? * *",
         "RefreshInterval": 1
     },
 

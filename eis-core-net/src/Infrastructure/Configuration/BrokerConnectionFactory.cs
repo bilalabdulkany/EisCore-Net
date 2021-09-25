@@ -7,6 +7,7 @@ using Apache.NMS.Util;
 using EisCore.Application.Interfaces;
 using EisCore.Domain.Entities;
 using Microsoft.Extensions.Logging;
+using Apache.NMS.ActiveMQ.Transport.Failover;
 
 namespace EisCore.Infrastructure.Configuration
 {
@@ -27,11 +28,14 @@ namespace EisCore.Infrastructure.Configuration
         protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
         protected static AutoResetEvent semaphore = new AutoResetEvent(false);
 
-        private IMessageConsumer _consumer;
-        private IMessageProducer _publisher;
+        private IMessageConsumer _MessageConsumer;
+        private IMessageProducer _MessagePublisher;
 
         private readonly IEventProcessor _eventProcessor;
-
+        private FailoverTransport _failoverTransport;
+        private Uri _connecturi;
+        private FailoverTransportFactory _failoverTransportFactory;
+        private static bool IsTransportInterrupted = false;
         CustomConnectionFactory _consumerConnFactory = null;
 
         public BrokerConnectionFactory(ILogger<BrokerConnectionFactory> log,
@@ -47,13 +51,15 @@ namespace EisCore.Infrastructure.Configuration
             var brokerUrl = _configManager.GetBrokerUrl();
             _log.LogInformation("Broker - {brokerUrl}", brokerUrl);
 
-            _consumerConnFactory = new CustomConnectionFactory();
-            Uri connecturi = new Uri(brokerUrl);
-            IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(connecturi);
+            // _consumerConnFactory = new CustomConnectionFactory();
+            _connecturi = new Uri(brokerUrl);
+            IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(_connecturi);
+            _failoverTransportFactory = new FailoverTransportFactory();
+
             _factory = factory;
             _ConsumerConnection = null;
             CreateProducerConnection();
-            
+
         }
         private void CreateProducerConnection()
         {
@@ -107,20 +113,22 @@ namespace EisCore.Infrastructure.Configuration
         {
             try
             {
-                if (_ConsumerConnection != null && _ConsumerConnection.IsStarted) {
+                if (_ConsumerConnection != null && _ConsumerConnection.IsStarted)
+                {
                     return;
                 }
-                if (_ConsumerConnection != null) {
+                if (_ConsumerConnection != null)
+                {
                     _log.LogInformation("_ConsumerConnection.IsStarted: " + _ConsumerConnection.IsStarted);
                     DestroyConsumerConnection();
-                    _log.LogInformation("_ConsumerConnection Stopped" );
+                    _log.LogInformation("_ConsumerConnection Stopped");
                 }
                 _log.LogInformation("Creating new consumer broker connection");
                 var brokerUrl = _configManager.GetBrokerUrl();
                 _log.LogInformation("Broker - {brokerUrl}", brokerUrl);
 
                 CustomConnectionFactory _consumerConnFactory = new CustomConnectionFactory();
-                Uri connecturi = new Uri(brokerUrl);                
+                Uri connecturi = new Uri(brokerUrl);
                 _ConsumerConnection = _consumerConnFactory.CreateActiveMQConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password, connecturi);
                 _ConsumerConnection.ClientId = "Consumer_Connection";
                 _log.LogInformation("connection created, client id set");
@@ -132,7 +140,7 @@ namespace EisCore.Infrastructure.Configuration
 
 
                 var ConsumerTcpSession = _ConsumerConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
-                
+
                 _ConsumerConnection.Start();
                 if (_ConsumerConnection.IsStarted)
                 {
@@ -145,8 +153,8 @@ namespace EisCore.Infrastructure.Configuration
                 var Queue = this._appSettings.InboundQueue;
                 var QueueDestination = SessionUtil.GetQueue(ConsumerTcpSession, Queue);
                 _log.LogInformation("Created MessageProducer for Destination Queue: {d}", QueueDestination);
-                _consumer = ConsumerTcpSession.CreateConsumer(QueueDestination);
-                _eventProcessor.RunConsumerEventListener(_consumer);
+                _MessageConsumer = ConsumerTcpSession.CreateConsumer(QueueDestination);
+                _eventProcessor.RunConsumerEventListener(_MessageConsumer);
             }
             catch (Exception e)
             {
@@ -155,59 +163,95 @@ namespace EisCore.Infrastructure.Configuration
                 throw e;
             }
         }
-        public IMessageProducer CreateProducer() {
-            try {
+        public IMessageProducer CreatePublisher()
+        {
+            try
+            {
+                  if (_MessagePublisher!=null)
+                {
+                    return _MessagePublisher;
+                }
                 var topic = _configManager.GetAppSettings().OutboundTopic;
                 var TopicDestination = SessionUtil.GetTopic(_ProducerSession, topic);
-                _ProducerConnection.Start();
-                if (_ProducerConnection.IsStarted) {
+                _ProducerConnection.Start();                
+                if (_ProducerConnection.IsStarted)
+                {
                     _log.LogInformation("connection started");
                 }
-                _publisher = _ProducerSession.CreateProducer(TopicDestination);
-                _publisher.DeliveryMode = MsgDeliveryMode.Persistent;
-                _publisher.RequestTimeout = receiveTimeout;
+                _MessagePublisher = _ProducerSession.CreateProducer(TopicDestination);
+                _MessagePublisher.DeliveryMode = MsgDeliveryMode.Persistent;
+                _MessagePublisher.RequestTimeout = receiveTimeout;
                 _log.LogInformation("Created MessageProducer for Destination Topic: {d}", TopicDestination);
-                return _publisher;
-            } catch (Exception e) {
+                return _MessagePublisher;
+            }
+            catch (Exception e)
+            {
                 _log.LogCritical("Error occurred while creating producer: " + e.StackTrace);
                 DestroyProducerConnection();
                 throw e;
             }
         }
-        public void DestroyConsumerConnection() {
-            try {
+        public void DestroyConsumerConnection()
+        {
+            try
+            {
                 _log.LogInformation("DestroyConsumerConnection - called: ");
-                ITransport consumerTransport = _consumerConnFactory.getConsumerTransport();
-                 _log.LogInformation("_transport.IsConnected: " + consumerTransport);
-                if(consumerTransport!=null){
-                    if(!consumerTransport.IsConnected) {
-                            consumerTransport.Stop();
-                            _log.LogInformation("stopped transport and no further close is needed");
-                    } else {
-                        if (_ConsumerConnection != null) {
-                            _log.LogInformation("_con");
-                            _ConsumerConnection.Stop();
-                            _ConsumerConnection.Close();
-                            _ConsumerConnection.Dispose();
-                            _log.LogInformation("DestroyConsumerConnection - connection disposed");
-                        }
+                //   ITransport consumerTransport = _consumerConnFactory.getConsumerTransport();
+
+                if (IsTransportInterrupted)
+                {
+                    //  consumerTransport.Stop();
+                    _log.LogInformation("stopped transport and no further close is needed");
+                }
+                else
+                {
+                    if (_ConsumerConnection != null)
+                    {
+                        _log.LogInformation("_ConsumerConnection != null");
+                        _ConsumerConnection.Stop();
+                        _ConsumerConnection.Close();
+                        _ConsumerConnection.Dispose();
+                        _ConsumerConnection = null;
+                        _log.LogInformation("DestroyConsumerConnection - connection disposed");
                     }
                 }
-            } catch (Exception ex) {
+
+            }
+            catch (Exception ex)
+            {
                 _log.LogError("Error while disposing the connection", ex.StackTrace);
             }
         }
-        public void DestroyProducerConnection() {
-            try {
+        public void DestroyProducerConnection()
+        {
+            try
+            {
                 _log.LogInformation("DestroyProducerConnection - called");
-                if (_ProducerConnection != null) {
-                    _ProducerConnection.Stop();
-                    _ProducerConnection.Close();
-                    _ProducerConnection.Dispose();
-                    _ProducerSession.Close();
-                    _log.LogInformation("DestroyProducerConnection - connection disposed");
+
+                if (IsTransportInterrupted)
+                {
+                    //  consumerTransport.Stop();
+                    _log.LogInformation("stopped transport and no further close is needed");
                 }
-            }  catch (Exception ex) {
+                else
+                {
+                    if (_ProducerConnection != null)
+                    {
+                        _log.LogInformation("_ProducerConnection != null");
+                        _ProducerConnection.Stop();
+                        _ProducerConnection.Close();
+                        _ProducerConnection.Dispose();
+                        _MessagePublisher=null;
+                        _ProducerConnection=null;
+                        _log.LogInformation("DestroyProducerConnection - connection disposed");
+                    }
+                }
+
+
+
+            }
+            catch (Exception ex)
+            {
                 _log.LogError("Error while disposing the connection", ex.StackTrace);
             }
         }
@@ -221,21 +265,49 @@ namespace EisCore.Infrastructure.Configuration
             return request;
         }
 
-        protected void OnConnectionInterruptedListener() {
+        protected void OnConnectionInterruptedListener()
+        {
             _log.LogInformation("Connection Interrupted.");
+            IsTransportInterrupted = true;
             DestroyConsumerConnection();
-            _ConsumerConnection = null;
-            // CreateAsyncBrokerConnection();
         }
-        protected void OnConnectionResumedListener() {
+        protected void OnConnectionResumedListener()
+        {
+            IsTransportInterrupted = false;
             _log.LogInformation("Connection Resumed.");
         }
-        protected void OnExceptionListener(Exception NMSException) {
+        protected void OnExceptionListener(Exception NMSException)
+        {
             _log.LogInformation("On Exception Listener: {e}", NMSException.GetBaseException());
             //    CreateAsyncBrokerConnection();
             DestroyConsumerConnection();
             _ConsumerConnection = null;
         }
+
+
+        private bool CheckFailoverTransport()
+        {
+            return true;
+            /*         FailoverTransportFactory failoverTransportFactory = new FailoverTransportFactory();
+                     using (ITransport transport = failoverTransportFactory.CreateTransport(_connecturi))
+                     {
+                         _failoverTransport = transport.Narrow(typeof(FailoverTransport)) as FailoverTransport;
+                         if (_failoverTransport != null)
+                         {
+
+
+                             _log.LogInformation("_transport.IsConnected: " + _failoverTransport.IsConnected);
+                             _log.LogInformation("_transport.IsStarted: " + _failoverTransport.IsStarted);
+                             _log.LogInformation("_transport.IsStarted: " + transport.IsConnected);
+
+                             return _failoverTransport.IsStarted;
+                         }
+                     }
+                     return false;
+                     */
+        }
+
+
 
         #region IDisposable Members
 
@@ -243,107 +315,114 @@ namespace EisCore.Infrastructure.Configuration
         {
             if (!this.isDisposed)
             {
-                if (_publisher != null)
+                if (_MessagePublisher != null)
                 {
-                    _publisher.Close();
+                    _MessagePublisher.Close();
                 }
-                if (_consumer != null)
+                if (_MessageConsumer != null)
                 {
-                    _consumer.Close();
+                    _MessageConsumer.Close();
                 }
+
+                DestroyConsumerConnection();
+                DestroyProducerConnection();
                 this.isDisposed = true;
             }
         }
         #endregion
 
-    }
-
-    class CustomConnectionFactory : ConnectionFactory
-    {
-        ITransport _consumerTransport;
-
-        public override bool Equals(object obj)
+        class CustomConnectionFactory : ConnectionFactory
         {
-            return base.Equals(obj);
-        }
+            ITransport _consumerTransport;
 
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
-
-        public override string ToString()
-        {
-            return base.ToString();
-        }
-
-        protected override void ConfigureConnection(Connection connection)
-        {
-            base.ConfigureConnection(connection);
-        }
-
-        protected override Connection CreateActiveMQConnection()
-        {
-            return base.CreateActiveMQConnection();
-        }
-
-        protected override Connection CreateActiveMQConnection(string userName, string password)
-        {
-            return base.CreateActiveMQConnection(userName, password);
-        }
-
-        protected override Connection CreateActiveMQConnection(ITransport transport)
-        {
-            return base.CreateActiveMQConnection(transport);
-        }
-
-        public Connection CreateActiveMQConnection(string userName, string password, Uri connecturi) {
-            Connection connection = null;
-            try
+            public override bool Equals(object obj)
             {
-                ITransport transport = TransportFactory.CreateTransport(connecturi);
-                _consumerTransport = transport;
-                connection = CreateActiveMQConnection(transport);
-
-                ConfigureConnection(connection);
-
-                connection.UserName = userName;
-                connection.Password = password;
-
-                if(base.ClientId != null)
-                {
-                    connection.DefaultClientId = base.ClientId;
-                }
-
-                return connection;
+                return base.Equals(obj);
             }
-            catch(NMSException)
+
+            public override int GetHashCode()
             {
+                return base.GetHashCode();
+            }
+
+            public override string ToString()
+            {
+                return base.ToString();
+            }
+
+            protected override void ConfigureConnection(Connection connection)
+            {
+                base.ConfigureConnection(connection);
+            }
+
+            protected override Connection CreateActiveMQConnection()
+            {
+                return base.CreateActiveMQConnection();
+            }
+
+            protected override Connection CreateActiveMQConnection(string userName, string password)
+            {
+                return base.CreateActiveMQConnection(userName, password);
+            }
+
+            protected override Connection CreateActiveMQConnection(ITransport transport)
+            {
+                return base.CreateActiveMQConnection(transport);
+            }
+
+            public Connection CreateActiveMQConnection(string userName, string password, Uri connecturi)
+            {
+                Connection connection = null;
                 try
                 {
-                    connection.Close();
-                }
-                catch
-                {
-                }
+                    ITransport transport = TransportFactory.CreateTransport(connecturi);
+                    _consumerTransport = transport;
+                    connection = CreateActiveMQConnection(transport);
 
-                throw;
+                    ConfigureConnection(connection);
+
+                    connection.UserName = userName;
+                    connection.Password = password;
+
+                    if (base.ClientId != null)
+                    {
+                        connection.DefaultClientId = base.ClientId;
+                    }
+
+                    return connection;
+                }
+                catch (NMSException)
+                {
+                    try
+                    {
+                        connection.Close();
+                    }
+                    catch
+                    {
+                    }
+
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    try
+                    {
+                        connection.Close();
+                    }
+                    catch
+                    {
+                    }
+
+                    throw NMSExceptionSupport.Create("Could not connect to broker URL: " + "Reason: " + e.Message, e);
+                }
             }
-            catch(Exception e)
+            public ITransport getConsumerTransport()
             {
-                try
-                {
-                    connection.Close();
-                }
-                catch
-                {
-                }
-
-                throw NMSExceptionSupport.Create("Could not connect to broker URL: " + "Reason: " + e.Message, e);
+                return _consumerTransport;
             }
         }
-        public ITransport getConsumerTransport() {
-            return _consumerTransport;
-        }
+
+
+
     }
 }

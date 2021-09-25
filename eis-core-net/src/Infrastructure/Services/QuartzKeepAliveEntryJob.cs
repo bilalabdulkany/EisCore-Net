@@ -58,6 +58,7 @@ namespace EisCore.Infrastructure.Services
                     string IpAddress = _dbContext.GetIPAddressOfServer(eisGroupKey, refreshInterval);
                     if (IpAddress != null)
                     {
+                         _log.LogInformation($"Current IP: [{testHostIp}]");
                          _log.LogInformation("IsIPAddressMatchesWithGroupEntry(IpAddress): " +  IsIPAddressMatchesWithGroupEntry(IpAddress));
                         if (!IsIPAddressMatchesWithGroupEntry(IpAddress))
                         {
