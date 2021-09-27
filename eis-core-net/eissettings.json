@@ -4,7 +4,7 @@
         "url": "localhost:61616)",
         "username": "admin",
         "password": "admin",
-        "CronExpression":"0/20 * 1/1 ? * *",
+        "CronExpression":"0/10 * 1/1 ? * *",
         "RefreshInterval": 1
     },
 

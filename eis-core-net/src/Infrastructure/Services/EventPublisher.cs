@@ -41,7 +41,7 @@ namespace EisCore
             try
             {
                 _log.LogInformation("Trying to publish message...");
-                _publisher = _brokerConfigFactory.CreateProducer();                
+                _publisher = _brokerConfigFactory.CreatePublisher();                
                 var watch = new System.Diagnostics.Stopwatch();
                 watch.Start();
                 ITextMessage request = _brokerConfigFactory.GetTextMessageRequest(messagePublish);
@@ -65,7 +65,7 @@ namespace EisCore
                 //TODO check if connection is stable and up
 
                 //  
-                _publisher = _brokerConfigFactory.CreateProducer();
+                _publisher = _brokerConfigFactory.CreatePublisher();
 
                 _log.LogInformation("sending object");
                 EisEvent eisEvent = this.getEisEvent(messageObject);

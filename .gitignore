@@ -1,4 +1,5 @@
 /eis-core-net/bin/**
 /eis-core-net/obj/**
+/event-publisher-net/TestCore.sqlite
 /event-publisher-net/bin/**
 /event-publisher-net/obj/**

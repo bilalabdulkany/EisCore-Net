@@ -52,9 +52,10 @@ namespace EisCore
             return TriggerBuilder
                 .Create()
                 .WithIdentity($"{schedule.JobType.FullName}.trigger")
-                .WithCronSchedule(schedule.GetCronExpression()).StartAt(DateTime.Now.AddDays(-1))
+                .WithCronSchedule(schedule.GetCronExpression(), x => x.WithMisfireHandlingInstructionDoNothing())
+                .StartAt(DateTime.Now.AddDays(-1))
                 .WithDescription(schedule.GetCronExpression())
-                .Build();
+                .Build();              
         }
 
         private static IJobDetail CreateJob(JobSchedule schedule)

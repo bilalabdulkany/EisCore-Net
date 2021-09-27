@@ -1,10 +1,13 @@
 using System;
 using System.Threading;
 using Apache.NMS;
+using Apache.NMS.ActiveMQ;
+using Apache.NMS.ActiveMQ.Transport;
 using Apache.NMS.Util;
 using EisCore.Application.Interfaces;
 using EisCore.Domain.Entities;
 using Microsoft.Extensions.Logging;
+using Apache.NMS.ActiveMQ.Transport.Failover;
 
 namespace EisCore.Infrastructure.Configuration
 {
@@ -25,10 +28,16 @@ namespace EisCore.Infrastructure.Configuration
         protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
         protected static AutoResetEvent semaphore = new AutoResetEvent(false);
 
-        private IMessageConsumer _consumer;
-        private IMessageProducer _publisher;
+        private IMessageConsumer _MessageConsumer;
+        private IMessageProducer _MessagePublisher;
 
         private readonly IEventProcessor _eventProcessor;
+        private FailoverTransport _failoverTransport;
+        private Uri _connecturi;
+        private static bool IsTransportInterrupted = false;
+        ConnectionInterruptedListener interruptedListener = null;
+        ConnectionResumedListener connectionResumedListener= null;
+        ExceptionListener connecttonExceptionListener =null;
 
         public BrokerConnectionFactory(ILogger<BrokerConnectionFactory> log,
         IConfigurationManager configurationManager, BrokerConfiguration brokerConfig, IEventProcessor eventProcessor)
@@ -43,38 +52,34 @@ namespace EisCore.Infrastructure.Configuration
             var brokerUrl = _configManager.GetBrokerUrl();
             _log.LogInformation("Broker - {brokerUrl}", brokerUrl);
 
-            Uri connecturi = new Uri(brokerUrl);
-            IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(connecturi);
+            _connecturi = new Uri(brokerUrl);
+            IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(_connecturi);
+
             _factory = factory;
             _ConsumerConnection = null;
-            CreateProducerConnection();
-        }
 
+            interruptedListener = new ConnectionInterruptedListener(OnConnectionInterruptedListener);
+            //connectionResumedListener= new ConnectionResumedListener(OnConnectionResumedListener);
+            connecttonExceptionListener = new ExceptionListener(OnExceptionListener);
+        
+           //CreateProducerConnection();
+
+        }
         private void CreateProducerConnection()
         {
-            //IConnection ConsumerTcpConnection = null;
-            //ISession ConsumerTcpSession = null;
-
             IConnection ProducerTcpConnection = null;
-            ISession ProducerTcpSession = null;
             try
             {
-                ProducerTcpConnection = _factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
+                _ProducerConnection = _factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
                 //ProducerTcpConnection.ClientId = "Producer_Connection";
 
-                if (ProducerTcpConnection.IsStarted)
+                if (_ProducerConnection.IsStarted)
                 {
                     _log.LogInformation("producer and consumer connection started");
                 }
 
-                /* TcpConnection.ConnectionInterruptedListener += new ConnectionInterruptedListener(OnConnectionInterruptedListener);
-                 TcpConnection.ConnectionResumedListener += new ConnectionResumedListener(OnConnectionResumedListener);
-                 TcpConnection.ExceptionListener += new ExceptionListener(OnExceptionListener);
-                 */
-                ProducerTcpSession = ProducerTcpConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
-                _ProducerConnection = ProducerTcpConnection;
-                _ProducerSession = ProducerTcpSession;
-
+                _ProducerSession = _ProducerConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
+                
                 _log.LogInformation("##Created Publisher connection {con}", this._ProducerConnection.ToString());
             }
             catch (Apache.NMS.ActiveMQ.ConnectionClosedException e1)
@@ -105,26 +110,37 @@ namespace EisCore.Infrastructure.Configuration
         {
             try
             {
-                if (_ConsumerConnection != null && _ConsumerConnection.IsStarted) {
+                // if (_ConsumerConnection != null && _ConsumerConnection.IsStarted)
+                // {
+                //     _log.LogInformation("returning existing broker connection in create consumer");
+                //     return;
+                // }
+                // if (_ConsumerConnection != null)
+                // {
+                //     _log.LogInformation("_ConsumerConnection.IsStarted: " + _ConsumerConnection.IsStarted);
+                //    DestroyConsumerConnection();
+                //     _log.LogInformation("_ConsumerConnection Stopped");
+                // }
+                _log.LogInformation("CreateConsumer _ConsumerConnection: >> " + _ConsumerConnection + " <<");
+                if(_ConsumerConnection != null) {
                     return;
                 }
-                if (_ConsumerConnection != null) {
-                    _log.LogInformation("_ConsumerConnection.IsStarted: " + _ConsumerConnection.IsStarted);
-                    _ConsumerConnection.Close();
-                }
+                _log.LogInformation("Creating new consumer broker connection");
+                var brokerUrl = _configManager.GetBrokerUrl();
+                _log.LogInformation("Broker - {brokerUrl}", brokerUrl);
 
                 _ConsumerConnection = _factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
-                _ConsumerConnection.ClientId = "Consumer_Connection";
+                //_ConsumerConnection.ClientId = "Consumer_Connection";
+                _log.LogInformation("connection created, client id set");
 
-                _ConsumerConnection.ConnectionInterruptedListener += new ConnectionInterruptedListener(OnConnectionInterruptedListener);
-                _ConsumerConnection.ConnectionResumedListener += new ConnectionResumedListener(OnConnectionResumedListener);
-                _ConsumerConnection.ExceptionListener += new ExceptionListener(OnExceptionListener);
-
-
-
-                var ConsumerTcpSession = _ConsumerConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
+                _ConsumerConnection.ConnectionInterruptedListener += interruptedListener;
+                //_ConsumerConnection.ConnectionResumedListener += connectionResumedListener;
+                _ConsumerConnection.ExceptionListener += connecttonExceptionListener;
                 
+                var ConsumerTcpSession = _ConsumerConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
+
                 _ConsumerConnection.Start();
+                IsTransportInterrupted = false;
                 if (_ConsumerConnection.IsStarted)
                 {
                     _log.LogInformation("consumer connection started");
@@ -136,8 +152,8 @@ namespace EisCore.Infrastructure.Configuration
                 var Queue = this._appSettings.InboundQueue;
                 var QueueDestination = SessionUtil.GetQueue(ConsumerTcpSession, Queue);
                 _log.LogInformation("Created MessageProducer for Destination Queue: {d}", QueueDestination);
-                _consumer = ConsumerTcpSession.CreateConsumer(QueueDestination);
-                _eventProcessor.RunConsumerEventListener(_consumer);
+                _MessageConsumer = ConsumerTcpSession.CreateConsumer(QueueDestination);
+                _eventProcessor.RunConsumerEventListener(_MessageConsumer);
             }
             catch (Exception e)
             {
@@ -146,40 +162,15 @@ namespace EisCore.Infrastructure.Configuration
                 throw e;
             }
         }
-
-
-        public void DestroyConsumerConnection()
+        public IMessageProducer CreatePublisher()
         {
             try
             {
-                _log.LogInformation("DestroyConsumerConnection - checking current consumer connection..");
-
-                if (_ConsumerConnection != null)
+                if (_MessagePublisher != null)
                 {
-                    _ConsumerConnection.Stop();
-                    _ConsumerConnection.Close();
-                    _ConsumerConnection.Dispose();
-                    _log.LogInformation("DestroyConsumerConnection - connection disposed");
+                    return _MessagePublisher;
                 }
-
-            }
-            catch (Exception ex)
-            {
-                _log.LogError("Error while disposing the connection", ex.StackTrace);
-            }
-            finally
-            {
-                if (_ConsumerConnection != null)
-                {
-                    _ConsumerConnection.Dispose();
-                }
-            }
-        }
-
-        public IMessageProducer CreateProducer()
-        {
-            try
-            {
+                CreateProducerConnection();
                 var topic = _configManager.GetAppSettings().OutboundTopic;
                 var TopicDestination = SessionUtil.GetTopic(_ProducerSession, topic);
                 _ProducerConnection.Start();
@@ -187,11 +178,11 @@ namespace EisCore.Infrastructure.Configuration
                 {
                     _log.LogInformation("connection started");
                 }
-                _publisher = _ProducerSession.CreateProducer(TopicDestination);
-                _publisher.DeliveryMode = MsgDeliveryMode.Persistent;
-                _publisher.RequestTimeout = receiveTimeout;
+                _MessagePublisher = _ProducerSession.CreateProducer(TopicDestination);
+                _MessagePublisher.DeliveryMode = MsgDeliveryMode.Persistent;
+                _MessagePublisher.RequestTimeout = receiveTimeout;
                 _log.LogInformation("Created MessageProducer for Destination Topic: {d}", TopicDestination);
-                return _publisher;
+                return _MessagePublisher;
             }
             catch (Exception e)
             {
@@ -200,33 +191,67 @@ namespace EisCore.Infrastructure.Configuration
                 throw e;
             }
         }
-
-        public void DestroyProducerConnection()
+        public void DestroyConsumerConnection()
         {
             try
             {
-                _log.LogInformation("DestroyProducerConnection - checking current Producer connection..");
+                _log.LogInformation("DestroyConsumerConnection - called, IsTransportInterrupted: " + IsTransportInterrupted);
+                //   ITransport consumerTransport = _consumerConnFactory.getConsumerTransport();
 
-                if (_ProducerConnection != null)
-                {
-                    _ProducerConnection.Stop();
-                    _ProducerConnection.Close();
-                    _ProducerConnection.Dispose();
-                    _ProducerSession.Close();
-                    _log.LogInformation("DestroyProducerConnection - connection disposed");
+                if(IsTransportInterrupted) {
+                    _log.LogInformation("Transport already stopped, hence exiting");
+                } else {
+                    if (_ConsumerConnection != null)
+                    {
+                        _log.LogInformation("_ConsumerConnection != null");
+                        _ConsumerConnection.ConnectionInterruptedListener -= interruptedListener;
+                        //_ConsumerConnection.ConnectionResumedListener -= connectionResumedListener;
+                        _ConsumerConnection.ExceptionListener -= connecttonExceptionListener;
+                        _ConsumerConnection.Stop();
+                        _ConsumerConnection.Close();
+                        _ConsumerConnection.Dispose();
+                        _log.LogInformation("_ConsumerConnection started: "+ _ConsumerConnection.IsStarted);
+                        _log.LogInformation("DestroyConsumerConnection - connection disposed");
+                    }
                 }
-
+                _ConsumerConnection = null;
             }
             catch (Exception ex)
             {
                 _log.LogError("Error while disposing the connection", ex.StackTrace);
             }
-            finally
+        }
+        public void DestroyProducerConnection()
+        {
+            try
             {
-                if (_ProducerConnection != null)
+                _log.LogInformation("DestroyProducerConnection - called");
+
+                if (IsTransportInterrupted)
                 {
-                    _ProducerConnection.Dispose();
+                    //  consumerTransport.Stop();
+                    _log.LogInformation("stopped transport and no further close is needed");
                 }
+                else
+                {
+                    if (_ProducerConnection != null)
+                    {
+                        _log.LogInformation("_ProducerConnection != null");
+                        _ProducerConnection.Stop();
+                        _ProducerConnection.Close();
+                        _ProducerConnection.Dispose();
+                        _MessagePublisher = null;
+                        _ProducerConnection = null;
+                        _log.LogInformation("DestroyProducerConnection - connection disposed");
+                    }
+                }
+
+
+
+            }
+            catch (Exception ex)
+            {
+                _log.LogError("Error while disposing the connection", ex.StackTrace);
             }
         }
 
@@ -239,23 +264,21 @@ namespace EisCore.Infrastructure.Configuration
             return request;
         }
 
-        protected void OnConnectionInterruptedListener()
-        {
+        protected void OnConnectionInterruptedListener() {
             _log.LogInformation("Connection Interrupted.");
+            IsTransportInterrupted = true;
             DestroyConsumerConnection();
-            _ConsumerConnection = null;
-            // CreateAsyncBrokerConnection();
         }
-        protected void OnConnectionResumedListener()
-        {
-            _log.LogInformation("Connection Resumed.");
-        }
-        protected void OnExceptionListener(Exception NMSException)
-        {
+        // protected void OnConnectionResumedListener()
+        // {
+        //     IsTransportInterrupted = false;
+        //     _log.LogInformation("Connection Resumed.");
+          
+        // }
+        protected void OnExceptionListener(Exception NMSException) {
             _log.LogInformation("On Exception Listener: {e}", NMSException.GetBaseException());
             //    CreateAsyncBrokerConnection();
-            DestroyConsumerConnection();
-            _ConsumerConnection = null;
+            //DestroyConsumerConnection();
         }
 
         #region IDisposable Members
@@ -264,18 +287,20 @@ namespace EisCore.Infrastructure.Configuration
         {
             if (!this.isDisposed)
             {
-                if (_publisher != null)
+                if (_MessagePublisher != null)
                 {
-                    _publisher.Close();
+                    _MessagePublisher.Close();
                 }
-                if (_consumer != null)
+                if (_MessageConsumer != null)
                 {
-                    _consumer.Close();
+                    _MessageConsumer.Close();
                 }
+
+                DestroyConsumerConnection();
+                DestroyProducerConnection();
                 this.isDisposed = true;
             }
         }
         #endregion
-
     }
 }
