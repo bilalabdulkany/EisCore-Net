@@ -4,18 +4,19 @@ using EisCore.Infrastructure.Services;
 
 namespace EisCore
 {
-    public class JobSchedule
+
+    public class ConsumerKeepAliveJobSchedule : IJobSchedule
     {
         IConfigurationManager _configManager;
-        public JobSchedule(IConfigurationManager configManager)
+        public ConsumerKeepAliveJobSchedule(IConfigurationManager configManager)
         {
             JobType = typeof(QuartzKeepAliveEntryJob);
-            _configManager=configManager;            
-            
+            _configManager = configManager;
+
         }
 
         public Type JobType { get; }
         public string GetCronExpression()
-         { return _configManager.GetBrokerConfiguration().CronExpression; }
+        { return _configManager.GetBrokerConfiguration().CronExpression; }
     }
 }

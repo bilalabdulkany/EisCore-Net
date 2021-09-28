@@ -8,6 +8,7 @@ using EisCore.Infrastructure.Services;
 using Quartz.Impl;
 using Quartz.Spi;
 using System.Collections.Specialized;
+using eis_core_net.src.Infrastructure.Services;
 
 namespace EisCore.Infrastructure.Configuration
 {
@@ -49,7 +50,10 @@ namespace EisCore.Infrastructure.Configuration
             
             // Add the required Quartz.NET services
             services.AddSingleton<QuartzKeepAliveEntryJob>();            
-            services.AddSingleton<JobSchedule>();
+            services.AddSingleton<QuartzInboxOutboxPollerJob>(); 
+            services.AddSingleton<IJobSchedule,ConsumerKeepAliveJobSchedule>();
+            services.AddSingleton<IJobSchedule,InboxOutboxPollerJobSchedule>();
+
                 //new JobSchedule( jobType: typeof(QuartzKeepAliveEntryJob),cronExpression:"0/20 * * * * ?")
             //);// run every {n} seconds
          

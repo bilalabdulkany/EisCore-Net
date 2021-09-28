@@ -46,7 +46,7 @@ namespace EisCore
         {
             EisEvent eisEvent = null;
             var InboundQueue = _configManager.GetAppSettings().InboundQueue;
-            string INOUT = null;
+           //string INOUT = null;
             try
             {
                 _log.LogInformation("Receiving the message inside OnMessage");
@@ -61,19 +61,15 @@ namespace EisCore
                 int recordInsertCount = _eventINOUTDbContext.TryEventInsert(eisEvent, InboundQueue, AtLeastOnceDeliveryDirection.IN).Result;
                 _log.LogInformation("INBOX insert status: {a}", recordInsertCount);
                // INOUT = recordInsertCount == 1 ? AtLeastOnceDeliveryDirection.IN : AtLeastOnceDeliveryDirection.OUT;
-                var recordUpdateStatus = 0;
-
-                IEnumerable<EisEventInboxOutbox> listofEvents= _eventINOUTDbContext.GetAllUnprocessedEvents(AtLeastOnceDeliveryDirection.OUT).Result;
-                foreach(var events in listofEvents){
-                    _log.LogInformation(events.Id.ToString());
-                }
+                //var recordUpdateStatus = 0;
+               
 
                 //if (!INOUT.Equals(AtLeastOnceDeliveryDirection.OUT))
                 {
-                    _eventHandlerRegistry.GetMessageProcessor().Process(eisEvent.Payload, eisEvent.EventType);
-                    recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED).Result;
+              //      _eventHandlerRegistry.GetMessageProcessor().Process(eisEvent.Payload, eisEvent.EventType);
+                   
                 }
-                _log.LogInformation("IN-OUT BOX update status: {a}", recordUpdateStatus);
+                //_log.LogInformation("IN-OUT BOX update status: {a}", recordUpdateStatus);
 
 
                 receivedMsg.Acknowledge();

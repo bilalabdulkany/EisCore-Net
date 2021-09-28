@@ -7,7 +7,7 @@ namespace EisCore.Application.Interfaces
 {
       public interface IEventInboxOutboxDbContext
     {
-        Task<IEnumerable<EisEventInboxOutbox>> GetAllUnprocessedEvents(string direction);
+        Task<IEnumerable<EisEventInboxOutbox>> GetAllUnprocessedEvents();
         Task<int> TryEventInsert(EisEvent eisEvent, string topicQueueName, string direction);
         Task<int> UpdateEventStatus(string eventId, string eventStatus);
     }

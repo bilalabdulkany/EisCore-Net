@@ -15,9 +15,9 @@ namespace EisCorec.Infrastructure.Services.Util
             _log = log;
         }
 
-        public static void ConsumeEvent(EisEvent eisEvent, string queueName, Dictionary<string, IMessageProcessor> messageProcessors, string sourceApplicationName)
+        public static void ConsumeEvent(EisEvent eisEvent, string queueName, EventHandlerRegistry eventRegistry, string sourceApplicationName)
         {
-            IMessageProcessor messageProcessor = messageProcessors[queueName];
+            IMessageProcessor messageProcessor = eventRegistry.GetMessageProcessor();
             if (messageProcessor == null)
             {
                 _log.LogError("{app}: No message handler found for the event ID {id} in queue {queue}", sourceApplicationName, eisEvent.EventID, queueName);

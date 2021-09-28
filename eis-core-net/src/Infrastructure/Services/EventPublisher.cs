@@ -48,15 +48,13 @@ namespace EisCore
                 EisEvent eisEvent = this.getEisEvent(messageObject);
                 var OutboundTopic = _configManager.GetAppSettings().OutboundTopic;
                 var watch = new System.Diagnostics.Stopwatch();
-                string jsonString = JsonSerializer.Serialize(eisEvent);
-                watch.Start();
-                _log.LogInformation("{s}", jsonString);
 
+                watch.Start();
                 int recordInsertCount = _eventINOUTDbContext.TryEventInsert(eisEvent, OutboundTopic, AtLeastOnceDeliveryDirection.OUT).Result;
 
                 Console.WriteLine($"publish Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue called");
-                
-                Task.Run(() => SendToQueue(jsonString));
+
+                Task.Run(() => SendToQueue(eisEvent));
 
                 watch.Stop();
                 _log.LogInformation("Message Sent! time taken {milliseconds} ms to Topic: {topic}", watch.ElapsedMilliseconds, _configManager.GetAppSettings().OutboundTopic);
@@ -71,12 +69,25 @@ namespace EisCore
         }
 
 
-        public void SendToQueue(string eisEvent)
+        public void SendToQueue(EisEvent eisEvent)
         {
-            _publisher =  _brokerConfigFactory.CreatePublisher();
-            ITextMessage request = _brokerConfigFactory.GetTextMessageRequest(eisEvent);
-            _publisher.Send(request);
-            Console.WriteLine($"Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue exiting");
+            var recordUpdateStatus = 0;
+            try
+            {
+                string jsonString = JsonSerializer.Serialize(eisEvent);
+                _publisher = _brokerConfigFactory.CreatePublisher();
+                ITextMessage request = _brokerConfigFactory.GetTextMessageRequest(jsonString);
+                _log.LogInformation("{s}", jsonString);
+                _publisher.Send(request);
+                //TODO add the processed status
+                Console.WriteLine($"Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue exiting");
+                recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED).Result;
+            }
+            catch (Exception e)
+            {
+                _log.LogInformation("{s}", e.StackTrace);
+            }
+
         }
 
 

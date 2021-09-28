@@ -83,16 +83,16 @@ namespace EisCore.Infrastructure.Persistence
 
         }
 
-        public async Task<IEnumerable<EisEventInboxOutbox>> GetAllUnprocessedEvents(string direction)
+        public async Task<IEnumerable<EisEventInboxOutbox>> GetAllUnprocessedEvents()
         {
 
-            string sqlite = "SELECT * FROM EIS_EVENT_INBOX_OUTBOX WHERE IS_EVENT_PROCESSED IS NULL AND IN_OUT=@direction order by EVENT_TIMESTAMP ASC";
+            string sqlite = "SELECT ID, EVENT_ID AS EVENTID, TOPIC_QUEUE_NAME AS TOPICQUEUENAME,EIS_EVENT AS EISEVENT,EVENT_TIMESTAMP AS EVENTTIMESTAMP, IS_EVENT_PROCESSED AS ISEVENTPROCESSED, IN_OUT AS INOUT FROM EIS_EVENT_INBOX_OUTBOX WHERE IS_EVENT_PROCESSED IS NULL order by EVENT_TIMESTAMP ASC";
             using (var connection = new SqliteConnection(_databaseName))
             {
                 try
                 {
-                    _log.LogInformation("Executing query: {sqlite} with variables [{direction}]", sqlite, direction);
-                    var ListOfEvents = await connection.QueryAsync<EisEventInboxOutbox>(sqlite, new { direction });
+                    _log.LogInformation("Executing query: {sqlite} with variables]", sqlite);
+                    var ListOfEvents = await connection.QueryAsync<EisEventInboxOutbox>(sqlite);
                     return ListOfEvents;
                 }
                 catch (Exception e)

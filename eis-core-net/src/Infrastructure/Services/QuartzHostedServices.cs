@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using EisCore.Application.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Quartz;
 using Quartz.Spi;
@@ -12,11 +13,11 @@ namespace EisCore
     {
         private readonly ISchedulerFactory _schedulerFactory;
         private readonly IJobFactory _jobFactory;
-        private readonly IEnumerable<JobSchedule> _jobSchedules;
+        private readonly IEnumerable<IJobSchedule> _jobSchedules;
 
         public QuartzHostedService(
             ISchedulerFactory schedulerFactory,
-            IEnumerable<JobSchedule> jobSchedules,
+            IEnumerable<IJobSchedule> jobSchedules,
             IJobFactory jobFactory)
         {
             _schedulerFactory = schedulerFactory;
@@ -47,7 +48,7 @@ namespace EisCore
             await Scheduler?.Shutdown(cancellationToken);
         }
 
-        private static ITrigger CreateTrigger(JobSchedule schedule)
+        private static ITrigger CreateTrigger(IJobSchedule schedule)
         {
             return TriggerBuilder
                 .Create()
@@ -58,7 +59,7 @@ namespace EisCore
                 .Build();              
         }
 
-        private static IJobDetail CreateJob(JobSchedule schedule)
+        private static IJobDetail CreateJob(IJobSchedule schedule)
         {
             var jobType = schedule.JobType;
             return JobBuilder
