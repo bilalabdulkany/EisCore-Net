@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using Apache.NMS;
 using Apache.NMS.Util;
+using EisCore.Application.Constants;
 
 namespace EisCore
 {
@@ -17,18 +18,20 @@ namespace EisCore
     {
         private bool isDisposed = false;
         private readonly ILogger<EventProcessor> _log;
-        readonly IConfigurationManager _configManager;
-        //readonly IApplicationDbContext _appDbContext;
+        private readonly IConfigurationManager _configManager;
+        private IEventInboxOutboxDbContext _eventINOUTDbContext;
         protected static ITextMessage queueMessage = null;
 
         private EventHandlerRegistry _eventHandlerRegistry;
-        private IMessageConsumer _consumer;
+        //private IMessageConsumer _consumer;
 
         public EventProcessor(ILogger<EventProcessor> log, IConfigurationManager configurationManager,
-           EventHandlerRegistry eventHandlerRegistry)
+           EventHandlerRegistry eventHandlerRegistry, IEventInboxOutboxDbContext eventINOUTDbContext)
         {
             this._log = log;
-            _eventHandlerRegistry = eventHandlerRegistry;
+            this._eventHandlerRegistry = eventHandlerRegistry;
+            this._eventINOUTDbContext = eventINOUTDbContext;
+            this._configManager = configurationManager;
         }
 
         public void RunConsumerEventListener(IMessageConsumer consumer)
@@ -41,6 +44,9 @@ namespace EisCore
 
         protected void OnMessage(IMessage receivedMsg)
         {
+            EisEvent eisEvent = null;
+            var InboundQueue = _configManager.GetAppSettings().InboundQueue;
+            string INOUT = null;
             try
             {
                 _log.LogInformation("Receiving the message inside OnMessage");
@@ -49,16 +55,33 @@ namespace EisCore
                 _log.LogInformation("Received message with ID: {n}  ", queueMessage.NMSMessageId);
                 _log.LogInformation("Received message with text: {n}  ", queueMessage.Text);
 
-                EisEvent eisEvent = JsonSerializer.Deserialize<EisEvent>(queueMessage.Text);
+                eisEvent = JsonSerializer.Deserialize<EisEvent>(queueMessage.Text);
+                //TODO check json deserializer exception handling in IN OUT BOX
                 _log.LogInformation("Receiving the message: {eisEvent}", eisEvent.ToString());
+                int recordInsertCount = _eventINOUTDbContext.TryEventInsert(eisEvent, InboundQueue, AtLeastOnceDeliveryDirection.IN).Result;
+                _log.LogInformation("INBOX insert status: {a}", recordInsertCount);
+               // INOUT = recordInsertCount == 1 ? AtLeastOnceDeliveryDirection.IN : AtLeastOnceDeliveryDirection.OUT;
+                var recordUpdateStatus = 0;
 
-                _eventHandlerRegistry.GetMessageProcessor().Process(eisEvent.payload, eisEvent.eventType);
+                IEnumerable<EisEventInboxOutbox> listofEvents= _eventINOUTDbContext.GetAllUnprocessedEvents(AtLeastOnceDeliveryDirection.OUT).Result;
+                foreach(var events in listofEvents){
+                    _log.LogInformation(events.Id.ToString());
+                }
+
+                //if (!INOUT.Equals(AtLeastOnceDeliveryDirection.OUT))
+                {
+                    _eventHandlerRegistry.GetMessageProcessor().Process(eisEvent.Payload, eisEvent.EventType);
+                    recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED).Result;
+                }
+                _log.LogInformation("IN-OUT BOX update status: {a}", recordUpdateStatus);
+
+
                 receivedMsg.Acknowledge();
-
             }
             catch (Exception ex)
             {
                 receivedMsg.Acknowledge();
+                _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.FAILED);
                 _log.LogError("exception in onMessage: {eisEvent}", ex.StackTrace);
                 throw ex;
             }

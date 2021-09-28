@@ -18,12 +18,13 @@ namespace EisCore.Infrastructure.Configuration
         {
             services.AddSingleton<IConfigurationManager, ConfigurationManager>();
             services.AddSingleton<IBrokerConnectionFactory, BrokerConnectionFactory>();
-            services.AddSingleton<IDatabaseBootstrap, DatabaseBootstrap>();              
+            services.AddSingleton<IDatabaseBootstrap, DatabaseBootstrap>();                        
             services.AddSingleton<IEventProcessor, EventProcessor>();
             services.AddSingleton<IEventPublisher, EventPublisher>();
             services.AddSingleton<BrokerConfiguration>();
             services.AddSingleton<EventHandlerRegistry>();
             services.AddSingleton<ICompetingConsumerDbContext,CompetingConsumerDbContext>();
+            services.AddSingleton<IEventInboxOutboxDbContext,EventInboxOutboxDbContext>();  
 
 
             services.AddSingleton<IJobFactory, JobFactory>();

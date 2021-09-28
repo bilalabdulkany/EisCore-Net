@@ -1,5 +1,6 @@
 using System;
 using Apache.NMS;
+using System.Threading.Tasks;
 namespace EisCore.Application.Interfaces
 {
     public interface IBrokerConnectionFactory : IDisposable

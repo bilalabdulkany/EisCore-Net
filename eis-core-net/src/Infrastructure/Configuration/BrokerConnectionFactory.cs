@@ -8,6 +8,7 @@ using EisCore.Application.Interfaces;
 using EisCore.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Apache.NMS.ActiveMQ.Transport.Failover;
+using System.Threading.Tasks;
 
 namespace EisCore.Infrastructure.Configuration
 {
@@ -34,7 +35,7 @@ namespace EisCore.Infrastructure.Configuration
         private readonly IEventProcessor _eventProcessor;
         private FailoverTransport _failoverTransport;
         private Uri _connecturi;
-        private static bool IsTransportInterrupted = false;
+        private static bool IsTransportInterrupted = true;
         ConnectionInterruptedListener interruptedListener = null;
         ConnectionResumedListener connectionResumedListener= null;
         ExceptionListener connecttonExceptionListener =null;
@@ -162,7 +163,7 @@ namespace EisCore.Infrastructure.Configuration
                 throw e;
             }
         }
-        public IMessageProducer CreatePublisher()
+        public  IMessageProducer CreatePublisher()
         {
             try
             {
@@ -178,7 +179,7 @@ namespace EisCore.Infrastructure.Configuration
                 {
                     _log.LogInformation("connection started");
                 }
-                _MessagePublisher = _ProducerSession.CreateProducer(TopicDestination);
+                 _MessagePublisher = _ProducerSession.CreateProducer(TopicDestination);
                 _MessagePublisher.DeliveryMode = MsgDeliveryMode.Persistent;
                 _MessagePublisher.RequestTimeout = receiveTimeout;
                 _log.LogInformation("Created MessageProducer for Destination Topic: {d}", TopicDestination);
@@ -199,7 +200,7 @@ namespace EisCore.Infrastructure.Configuration
                 //   ITransport consumerTransport = _consumerConnFactory.getConsumerTransport();
 
                 if(IsTransportInterrupted) {
-                    _log.LogInformation("Transport already stopped, hence exiting");
+                    _log.LogInformation("DestroyConsumerConnection Transport already stopped");
                 } else {
                     if (_ConsumerConnection != null)
                     {
@@ -230,10 +231,11 @@ namespace EisCore.Infrastructure.Configuration
                 if (IsTransportInterrupted)
                 {
                     //  consumerTransport.Stop();
-                    _log.LogInformation("stopped transport and no further close is needed");
+                    _log.LogInformation("DestroyProducerConnection stopped transport");
                 }
                 else
                 {
+                    _log.LogInformation("DestroyProducerConnection inside else");
                     if (_ProducerConnection != null)
                     {
                         _log.LogInformation("_ProducerConnection != null");
@@ -241,13 +243,10 @@ namespace EisCore.Infrastructure.Configuration
                         _ProducerConnection.Close();
                         _ProducerConnection.Dispose();
                         _MessagePublisher = null;
-                        _ProducerConnection = null;
                         _log.LogInformation("DestroyProducerConnection - connection disposed");
                     }
                 }
-
-
-
+                _ProducerConnection = null;
             }
             catch (Exception ex)
             {
@@ -268,6 +267,7 @@ namespace EisCore.Infrastructure.Configuration
             _log.LogInformation("Connection Interrupted.");
             IsTransportInterrupted = true;
             DestroyConsumerConnection();
+            DestroyProducerConnection();
         }
         // protected void OnConnectionResumedListener()
         // {

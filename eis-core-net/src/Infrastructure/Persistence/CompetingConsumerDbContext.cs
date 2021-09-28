@@ -34,6 +34,8 @@ namespace EisCore.Infrastructure.Persistence
             HostIp = this._configuration["environment:profile"];
         }
 
+
+        //TODO TESTING to be removed
         public void setHostIpAddress(string hostIp) {
             HostIp = hostIp;
         }
@@ -54,7 +56,7 @@ namespace EisCore.Infrastructure.Persistence
                     "WHERE NOT EXISTS(SELECT 1 FROM EIS_COMPETING_CONSUMER_GROUP WHERE GROUP_KEY = @eisGroupKey1)";
 
                     var eisGroupKey1 = eisGroupKey;
-                    _log.LogInformation("Executing query: {sql} with variables [ {a},{b},{c} ]", sqlite, Id, eisGroupKey, HostIp, eisGroupKey);
+                    _log.LogDebug("Executing query: {sql} with variables [ {a},{b},{c} ]", sqlite, Id, eisGroupKey, HostIp, eisGroupKey);
                     return await connection.ExecuteAsync(sqlite, new { Id, eisGroupKey, HostIp, eisGroupKey1 });
 
 
@@ -83,7 +85,7 @@ namespace EisCore.Infrastructure.Persistence
                     string sqlite = "UPDATE EIS_COMPETING_CONSUMER_GROUP SET LAST_ACCESSED_TIMESTAMP = datetime('now','localtime') WHERE " +
                    "GROUP_KEY=CAST(@eisGroupKey AS VARCHAR(50)) AND HOST_IP_ADDRESS= CAST(@HostIp AS VARCHAR(255)) AND 1=@startStatus";
 
-                    _log.LogInformation("Executing query: {sql} with variables [ {a},{b},{c} ]", sqlite, eisGroupKey, HostIp, startStatus);
+                    _log.LogDebug("Executing query: {sql} with variables [ {a},{b},{c} ]", sqlite, eisGroupKey, HostIp, startStatus);
 
                     return await connection.ExecuteAsync(sqlite, new { eisGroupKey, HostIp, startStatus });
 
@@ -112,7 +114,7 @@ namespace EisCore.Infrastructure.Persistence
                     "CAST ((julianday(datetime('now','localtime'))-julianday(last_accessed_timestamp))*24*60 as Integer)>@eisGroupRefreshInterval " +
                     "AND GROUP_KEY=@eisGroupKey";
 
-                    _log.LogInformation("Executing query: {sql} with variables {a},{b}", sqlite, eisGroupRefreshInterval, eisGroupKey);
+                    _log.LogDebug("Executing query: {sql} with variables {a},{b}", sqlite, eisGroupRefreshInterval, eisGroupKey);
 
                     return await connection.ExecuteAsync(sqlite, new { eisGroupRefreshInterval, eisGroupKey });
                 }
@@ -140,7 +142,7 @@ namespace EisCore.Infrastructure.Persistence
                     string sqlite = "SELECT HOST_IP_ADDRESS FROM EIS_COMPETING_CONSUMER_GROUP WHERE GROUP_KEY=@eisGroupKey " +
                     "AND CAST ((julianday(datetime('now','localtime'))-julianday(last_accessed_timestamp))*24*60 as Integer)<=@eisGroupRefreshInterval";
 
-                    _log.LogInformation("Executing query: {sql} with variables {a},{b}", sqlite, eisGroupKey, eisGroupRefreshInterval);
+                    _log.LogDebug("Executing query: {sql} with variables {a},{b}", sqlite, eisGroupKey, eisGroupRefreshInterval);
 
                     string result = connection.QuerySingleOrDefault<string>(sqlite, new { eisGroupKey, eisGroupRefreshInterval });
                     _log.LogInformation("IP address from query: [ {a} ]", result);

@@ -8,19 +8,19 @@ namespace EisCore.Domain.Entities
         public class EisEvent 
     {
        
-        public string eventID{get;set;}
+        public string EventID{get;set;}
        
-        public string eventType{get;set;}
+        public string EventType{get;set;}
       
-        public DateTime createdDate {get;set;}
+        public DateTime CreatedDate {get;set;}
      
-        public string sourceSystemName{get;set;}
+        public string SourceSystemName{get;set;}
        
-        public string traceId {get;set;}
+        public string TraceId {get;set;}
         
-        public string spanId {get;set;}
+        public string SpanId {get;set;}
         
-        public Payload payload {get;set;}
+        public Payload Payload {get;set;}
         
         //TODO - Method Chaining
     }

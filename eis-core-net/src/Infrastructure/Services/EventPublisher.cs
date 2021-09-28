@@ -23,59 +23,41 @@ namespace EisCore
         private readonly ILogger<EventPublisher> _log;
 
         private readonly IBrokerConnectionFactory _brokerConfigFactory;
+        private readonly IEventInboxOutboxDbContext _eventINOUTDbContext;
 
         protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
         private bool isDisposed = false;
 
-        public EventPublisher(ILogger<EventPublisher> log, IConfigurationManager configManager, IBrokerConnectionFactory brokerConfigFactory)        {
+        public EventPublisher(ILogger<EventPublisher> log, IConfigurationManager configManager, IBrokerConnectionFactory brokerConfigFactory, IEventInboxOutboxDbContext eventINOUTDbContext)
+        {
             //this._appDbContext=appDbContext;
             this._log = log;
-            this._brokerConfigFactory=brokerConfigFactory;
-            this._configManager = configManager;           
-
+            this._brokerConfigFactory = brokerConfigFactory;
+            this._configManager = configManager;
+            this._eventINOUTDbContext = eventINOUTDbContext;
         }
 
-
-        public void publish(string messagePublish)
-        {
-            try
-            {
-                _log.LogInformation("Trying to publish message...");
-                _publisher = _brokerConfigFactory.CreatePublisher();                
-                var watch = new System.Diagnostics.Stopwatch();
-                watch.Start();
-                ITextMessage request = _brokerConfigFactory.GetTextMessageRequest(messagePublish);
-                _publisher.Send(request);
-                //_appDbContext.Create(new Application.Models.Event("ID3","Code1","Publish-Event","Testing Sample Insert"));
-                watch.Stop();
-                _log.LogInformation("Message Sent! time taken {milliseconds} ms to Topic: {topic}", watch.ElapsedMilliseconds, _configManager.GetAppSettings().OutboundTopic);
-            }
-            catch (Exception e)
-            {
-                _log.LogError("Error occurred {e}", e.StackTrace);
-
-            }
-
-        }
 
         public void publish(IMessageEISProducer messageObject)
         {
             try
             {
                 //TODO check if connection is stable and up
-
                 //  
-                _publisher = _brokerConfigFactory.CreatePublisher();
-
                 _log.LogInformation("sending object");
                 EisEvent eisEvent = this.getEisEvent(messageObject);
+                var OutboundTopic = _configManager.GetAppSettings().OutboundTopic;
                 var watch = new System.Diagnostics.Stopwatch();
                 string jsonString = JsonSerializer.Serialize(eisEvent);
                 watch.Start();
                 _log.LogInformation("{s}", jsonString);
-                ITextMessage request = _brokerConfigFactory.GetTextMessageRequest(jsonString);
-                _publisher.Send(request);
-                //_appDbContext.Create(new Application.Models.Event("ID11","Code1","Publish-Event","Testing Sample Insert"));
+
+                int recordInsertCount = _eventINOUTDbContext.TryEventInsert(eisEvent, OutboundTopic, AtLeastOnceDeliveryDirection.OUT).Result;
+
+                Console.WriteLine($"publish Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue called");
+                
+                Task.Run(() => SendToQueue(jsonString));
+
                 watch.Stop();
                 _log.LogInformation("Message Sent! time taken {milliseconds} ms to Topic: {topic}", watch.ElapsedMilliseconds, _configManager.GetAppSettings().OutboundTopic);
             }
@@ -84,24 +66,30 @@ namespace EisCore
             {
                 _log.LogError("Error {e}", e.StackTrace);
                 _log.LogCritical("Connection Listener delegation..{log}", e.GetBaseException());
-              // _brokerConfigFactory.CreateBrokerConnection();
+                // _brokerConfigFactory.CreateBrokerConnection();
             }
         }
 
-       
 
+        public void SendToQueue(string eisEvent)
+        {
+            _publisher =  _brokerConfigFactory.CreatePublisher();
+            ITextMessage request = _brokerConfigFactory.GetTextMessageRequest(eisEvent);
+            _publisher.Send(request);
+            Console.WriteLine($"Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue exiting");
+        }
 
 
         private EisEvent getEisEvent(IMessageEISProducer messageProducer)
         {
             EisEvent eisEvent = new EisEvent();
-            eisEvent.eventID = Guid.NewGuid().ToString();
-            eisEvent.eventType = messageProducer.getEventType();
-            eisEvent.traceId = messageProducer.getTraceId();
-            eisEvent.spanId = Guid.NewGuid().ToString();
-            eisEvent.createdDate = DateTime.Now;
-            eisEvent.sourceSystemName = SourceSystemName.MDM;//TODO get the name from properies
-            eisEvent.payload = messageProducer.getPayLoad();
+            eisEvent.EventID = Guid.NewGuid().ToString();
+            eisEvent.EventType = messageProducer.getEventType();
+            eisEvent.TraceId = messageProducer.getTraceId();
+            eisEvent.SpanId = Guid.NewGuid().ToString();
+            eisEvent.CreatedDate = DateTime.Now;
+            eisEvent.SourceSystemName = SourceSystemName.MDM;//TODO get the name from properies
+            eisEvent.Payload = messageProducer.getPayLoad();
             return eisEvent;
         }
 
@@ -112,7 +100,8 @@ namespace EisCore
         {
             if (!this.isDisposed)
             {
-                _publisher.Close();
+                if (_publisher != null)
+                    _publisher.Close();
                 this.isDisposed = true;
             }
         }
