@@ -63,7 +63,7 @@ namespace event_publisher_net
 
            // app.ApplicationServices.GetService<IConfigurationManager>();
             app.ApplicationServices.GetService<IMessageQueueManager>();
-            app.ApplicationServices.GetService<IDatabaseBootstrap>().Setup();
+            app.ApplicationServices.GetService<IDatabaseBootstrap>();
              EventMessageProcessor eventProcessor  = null;
             // get scoped factory
             var scopedFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();

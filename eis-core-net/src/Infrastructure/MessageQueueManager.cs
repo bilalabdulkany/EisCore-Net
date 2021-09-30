@@ -141,20 +141,21 @@ namespace EisCore
 
         public void QueueToPublisherTopic(EisEvent eisEvent, bool isCurrent)
         {
-            if (!GlobalVariables.IsUnprocessedOutMessagePresent && !isCurrent)//First publish the messages in OUTBOX queue if not empty
-            {
-                _brokerConnectionFactory.QueueToPublisherTopic(eisEvent);
-                var recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED).Result;
-                _log.LogInformation("Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus);
-            }//TODO process current events
-            if (isCurrent)
+            if (isCurrent && !GlobalVariables.IsUnprocessedOutMessagePresent)
             {
                 _brokerConnectionFactory.QueueToPublisherTopic(eisEvent);
                 var recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED).Result;
                 _log.LogInformation("Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus);
             }
 
+            if (!isCurrent)//First publish the messages in OUTBOX queue if not empty
+            {
+                _brokerConnectionFactory.QueueToPublisherTopic(eisEvent);
+                var recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED).Result;
+                _log.LogInformation("Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus);
+            }//TODO process current events
 
+            //If it is coming from timer, isCurrent=false, and GlobalVariables.IsUnprocessedOutMessagePresent is true -- do nothing - let the 
         }
 
         public void ConsumeEvent(EisEvent eisEvent, string queueName)
