@@ -14,27 +14,25 @@ using EisCore.Application.Constants;
 
 namespace EisCore
 {
-    public class EventPublisher : IEventPublisher
+    public class EventPublisherService : IEventPublisherService
     {
 
-        private Apache.NMS.IMessageProducer _publisher;
-        private readonly IConfigurationManager _configManager;
-        //readonly IApplicationDbContext _appDbContext;
-        private readonly ILogger<EventPublisher> _log;
+        private readonly IConfigurationManager _configManager;      
+        private readonly ILogger<EventPublisherService> _log;
 
-        private readonly IBrokerConnectionFactory _brokerConfigFactory;
+        private readonly IMessageQueueManager _messageQueueManager;
         private readonly IEventInboxOutboxDbContext _eventINOUTDbContext;
 
         protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
         private bool isDisposed = false;
 
-        public EventPublisher(ILogger<EventPublisher> log, IConfigurationManager configManager, IBrokerConnectionFactory brokerConfigFactory, IEventInboxOutboxDbContext eventINOUTDbContext)
+        public EventPublisherService(ILogger<EventPublisherService> log, IConfigurationManager configManager, IMessageQueueManager messageQueueManager, IEventInboxOutboxDbContext eventINOUTDbContext)
         {
-            //this._appDbContext=appDbContext;
+
             this._log = log;
-            this._brokerConfigFactory = brokerConfigFactory;
             this._configManager = configManager;
             this._eventINOUTDbContext = eventINOUTDbContext;
+            this._messageQueueManager = messageQueueManager;
         }
 
 
@@ -54,7 +52,9 @@ namespace EisCore
 
                 Console.WriteLine($"publish Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue called");
 
-                Task.Run(() => SendToQueue(eisEvent));
+
+                Task.Run(()=>_messageQueueManager.QueueToPublisherTopic(eisEvent,true));//Execute method in separate thread
+                
 
                 watch.Stop();
                 _log.LogInformation("Message Sent! time taken {milliseconds} ms to Topic: {topic}", watch.ElapsedMilliseconds, _configManager.GetAppSettings().OutboundTopic);
@@ -64,33 +64,8 @@ namespace EisCore
             {
                 _log.LogError("Error {e}", e.StackTrace);
                 _log.LogCritical("Connection Listener delegation..{log}", e.GetBaseException());
-                // _brokerConfigFactory.CreateBrokerConnection();
             }
         }
-
-
-        public void SendToQueue(EisEvent eisEvent)
-        {
-            var recordUpdateStatus = 0;
-            try
-            {
-                string jsonString = JsonSerializer.Serialize(eisEvent);
-                _publisher = _brokerConfigFactory.CreatePublisher();
-                ITextMessage request = _brokerConfigFactory.GetTextMessageRequest(jsonString);
-                _log.LogInformation("{s}", jsonString);
-                _publisher.Send(request);
-                //TODO add the processed status
-                Console.WriteLine($"Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue exiting");
-                recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED).Result;
-            }
-            catch (Exception e)
-            {
-                _log.LogInformation("{s}", e.StackTrace);
-            }
-
-        }
-
-
         private EisEvent getEisEvent(IMessageEISProducer messageProducer)
         {
             EisEvent eisEvent = new EisEvent();
@@ -105,17 +80,6 @@ namespace EisCore
         }
 
 
-        #region IDisposable Members
 
-        public void Dispose()
-        {
-            if (!this.isDisposed)
-            {
-                if (_publisher != null)
-                    _publisher.Close();
-                this.isDisposed = true;
-            }
-        }
-        #endregion
     }
 }

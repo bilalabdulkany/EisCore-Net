@@ -61,8 +61,8 @@ namespace event_publisher_net
                 endpoints.MapControllers();
             });
 
-            app.ApplicationServices.GetService<IConfigurationManager>();
-            app.ApplicationServices.GetService<IEventProcessor>();
+           // app.ApplicationServices.GetService<IConfigurationManager>();
+            app.ApplicationServices.GetService<IMessageQueueManager>();
             app.ApplicationServices.GetService<IDatabaseBootstrap>().Setup();
              EventMessageProcessor eventProcessor  = null;
             // get scoped factory

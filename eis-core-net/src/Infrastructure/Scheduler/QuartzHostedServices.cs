@@ -54,10 +54,12 @@ namespace EisCore
                 .Create()
                 .WithIdentity($"{schedule.JobType.FullName}.trigger")
                 .WithCronSchedule(schedule.GetCronExpression(), x => x.WithMisfireHandlingInstructionDoNothing())
-                .StartAt(DateTime.Now.AddDays(-1))
+                .StartAt(DateTime.Now.AddDays(-1))                
+                .StartNow()
                 .WithDescription(schedule.GetCronExpression())
                 .Build();              
         }
+   
 
         private static IJobDetail CreateJob(IJobSchedule schedule)
         {

@@ -22,16 +22,14 @@ namespace EisCore.Infrastructure.Configuration
         private ILogger<ConfigurationManager> _log;
         private BrokerConfiguration _brokerConfiguration;
         private ApplicationSettings _appSettings;
-        private IConfiguration _configuration;       
+        private IConfiguration _configuration;
 
         public ConfigurationManager(ILogger<ConfigurationManager> log, IConfiguration configuration)
         {
-
+            
             this._log = log;
-            //this._brokerConfiguration = brokerConfig;
-            this._configuration = configuration;
-
             _log.LogInformation("ConfigurationManager constructor");
+            this._configuration = configuration;
             BindAppSettingsToObjects();
         }
 
@@ -62,7 +60,7 @@ namespace EisCore.Infrastructure.Configuration
                 stream = assembly.GetManifestResourceStream(name);
                 configurationBuilder.AddJsonStream(stream);
             }
-            
+
 
         }
 

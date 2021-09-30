@@ -8,7 +8,6 @@ using EisCore.Infrastructure.Services;
 using Quartz.Impl;
 using Quartz.Spi;
 using System.Collections.Specialized;
-using eis_core_net.src.Infrastructure.Services;
 
 namespace EisCore.Infrastructure.Configuration
 {
@@ -18,16 +17,15 @@ namespace EisCore.Infrastructure.Configuration
         public static void ConfigureServices(IServiceCollection services, IConfiguration Configuration)
         {
             services.AddSingleton<IConfigurationManager, ConfigurationManager>();
-            services.AddSingleton<IBrokerConnectionFactory, BrokerConnectionFactory>();
-            services.AddSingleton<IDatabaseBootstrap, DatabaseBootstrap>();                        
-            services.AddSingleton<IEventProcessor, EventProcessor>();
-            services.AddSingleton<IEventPublisher, EventPublisher>();
+            services.AddSingleton<IEventInboxOutboxDbContext, EventInboxOutboxDbContext>();
+            services.AddSingleton<ICompetingConsumerDbContext, CompetingConsumerDbContext>();
+            services.AddSingleton<IDatabaseBootstrap, DatabaseBootstrap>();
             services.AddSingleton<BrokerConfiguration>();
             services.AddSingleton<EventHandlerRegistry>();
-            services.AddSingleton<ICompetingConsumerDbContext,CompetingConsumerDbContext>();
-            services.AddSingleton<IEventInboxOutboxDbContext,EventInboxOutboxDbContext>();  
-
-
+            services.AddSingleton<IBrokerConnectionFactory, BrokerConnectionFactory>();
+            services.AddSingleton<IMessageQueueManager, MessageQueueManager>();
+            //services.AddSingleton<IEventConsumerService, EventConsumerService>();
+            services.AddSingleton<IEventPublisherService, EventPublisherService>();
             services.AddSingleton<IJobFactory, JobFactory>();
 
             var properties = new NameValueCollection();
@@ -47,16 +45,16 @@ namespace EisCore.Infrastructure.Configuration
                 options.Scheduling.IgnoreDuplicates = true; // default: false
                 options.Scheduling.OverWriteExistingData = true; // default: true
             });
-            
-            // Add the required Quartz.NET services
-            services.AddSingleton<QuartzKeepAliveEntryJob>();            
-            services.AddSingleton<QuartzInboxOutboxPollerJob>(); 
-            services.AddSingleton<IJobSchedule,ConsumerKeepAliveJobSchedule>();
-            services.AddSingleton<IJobSchedule,InboxOutboxPollerJobSchedule>();
 
-                //new JobSchedule( jobType: typeof(QuartzKeepAliveEntryJob),cronExpression:"0/20 * * * * ?")
+            // Add the required Quartz.NET services
+            services.AddSingleton<KeepAliveEntryPollerJob>();
+            services.AddSingleton<InboxOutboxPollerJob>();
+            services.AddSingleton<IJobSchedule, ConsumerKeepAliveJobSchedule>();
+            services.AddSingleton<IJobSchedule, InboxOutboxPollerJobSchedule>();
+
+            //new JobSchedule( jobType: typeof(QuartzKeepAliveEntryJob),cronExpression:"0/20 * * * * ?")
             //);// run every {n} seconds
-         
+
         }
     }
 }

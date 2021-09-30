@@ -1,16 +1,16 @@
 using System;
 using Apache.NMS;
 using System.Threading.Tasks;
+using EisCore.Domain.Entities;
+
 namespace EisCore.Application.Interfaces
 {
     public interface IBrokerConnectionFactory : IDisposable
-    {
-        //IConnection _ConsumerConnection { get; set; }
-        //IConnection _ProducerConnection { get; set; }
-        IMessageProducer CreatePublisher();
-        ITextMessage GetTextMessageRequest(string message);
-        void CreateConsumer();
+    {      
+        IMessageProducer CreatePublisher();       
+        void CreateConsumerListener();
         void DestroyConsumerConnection();
+        void QueueToPublisherTopic(EisEvent eisEvent);
 
 
     }

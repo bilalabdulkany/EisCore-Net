@@ -20,7 +20,6 @@ namespace EisCore.Infrastructure.Persistence
         private IConfiguration _configuration;
         private string HostIp;
 
-
         public EventInboxOutboxDbContext(ILogger<EventInboxOutboxDbContext> log, IConfiguration configuration)
         {
             this._log = log;
@@ -30,7 +29,6 @@ namespace EisCore.Infrastructure.Persistence
             {
                 _databaseName = "Data Source=TestCore.sqlite";
             }
-
             HostIp = this._configuration["environment:profile"];
         }
 
@@ -42,7 +40,7 @@ namespace EisCore.Infrastructure.Persistence
 
             string sqlite = "INSERT INTO EIS_EVENT_INBOX_OUTBOX(ID,EVENT_ID,TOPIC_QUEUE_NAME,EIS_EVENT, EVENT_TIMESTAMP,IN_OUT)" +
             " SELECT CAST(@Id AS VARCHAR(50)), CAST (@EventID AS VARCHAR(50)),CAST (@topicQueueName AS VARCHAR(50)), CAST (@objString AS CLOB), datetime('now','localtime'), CAST (@direction AS VARCHAR(3))" +
-            " WHERE NOT EXISTS (SELECT 1 FROM EIS_EVENT_INBOX_OUTBOX WHERE EVENT_ID=@EventID)";
+            " WHERE NOT EXISTS (SELECT 1 FROM EIS_EVENT_INBOX_OUTBOX WHERE EVENT_ID=@EventID and IN_OUT=@direction )";
 
             using (var connection = new SqliteConnection(_databaseName))
             {
@@ -50,14 +48,13 @@ namespace EisCore.Infrastructure.Persistence
                 {
                     string objString = JsonSerializer.Serialize(eisEvent);
                     var Id = Guid.NewGuid().ToString();
-                    _log.LogInformation("Executing query: {sqlite} with variables [{Id},{eisEvent.EventID},{topicQueueName},{objString},{direction}]", sqlite, Id, eisEvent.EventID, topicQueueName, objString, direction);
+                    _log.LogDebug("Executing query: {sqlite} with variables [{Id},{eisEvent.EventID},{topicQueueName},{objString},{direction}]", sqlite, Id, eisEvent.EventID, topicQueueName, objString, direction);
                     return await connection.ExecuteAsync(sqlite, new { Id, eisEvent.EventID, topicQueueName, objString, direction });
                 }
                 catch (Exception e)
                 {
                     _log.LogError("Error occurred: {e}", e.StackTrace);
                 }
-
             }
             return 0;
         }
@@ -72,7 +69,7 @@ namespace EisCore.Infrastructure.Persistence
                 {
                     _log.LogInformation("Executing query: {sqlite} with variables [{eventStatus},{eventId}]", sqlite, eventStatus, eventId);
                     return await connection.ExecuteAsync(sqlite, new { eventStatus, eventId });
-                }               
+                }
                 catch (Exception e)
                 {
                     _log.LogError("Error occurred: {e}", e.StackTrace);
@@ -80,20 +77,18 @@ namespace EisCore.Infrastructure.Persistence
 
             }
             return 0;
-
         }
 
-        public async Task<IEnumerable<EisEventInboxOutbox>> GetAllUnprocessedEvents()
+        public async Task<List<EisEventInboxOutbox>> GetAllUnprocessedEvents(string direction)
         {
-
-            string sqlite = "SELECT ID, EVENT_ID AS EVENTID, TOPIC_QUEUE_NAME AS TOPICQUEUENAME,EIS_EVENT AS EISEVENT,EVENT_TIMESTAMP AS EVENTTIMESTAMP, IS_EVENT_PROCESSED AS ISEVENTPROCESSED, IN_OUT AS INOUT FROM EIS_EVENT_INBOX_OUTBOX WHERE IS_EVENT_PROCESSED IS NULL order by EVENT_TIMESTAMP ASC";
+            string sqlite = "SELECT ID, EVENT_ID AS EVENTID, TOPIC_QUEUE_NAME AS TOPICQUEUENAME,EIS_EVENT AS EISEVENT,EVENT_TIMESTAMP AS EVENTTIMESTAMP, IS_EVENT_PROCESSED AS ISEVENTPROCESSED, IN_OUT AS INOUT FROM EIS_EVENT_INBOX_OUTBOX WHERE IS_EVENT_PROCESSED IS NULL and IN_OUT=@direction order by EVENT_TIMESTAMP ASC";
             using (var connection = new SqliteConnection(_databaseName))
             {
                 try
                 {
-                    _log.LogInformation("Executing query: {sqlite} with variables]", sqlite);
-                    var ListOfEvents = await connection.QueryAsync<EisEventInboxOutbox>(sqlite);
-                    return ListOfEvents;
+                    _log.LogDebug("Executing query: {sqlite} with variables [{direction}]]", sqlite,direction);
+                    var ListOfEvents = await connection.QueryAsync<EisEventInboxOutbox>(sqlite,new {direction});
+                    return ListOfEvents.AsList();
                 }
                 catch (Exception e)
                 {

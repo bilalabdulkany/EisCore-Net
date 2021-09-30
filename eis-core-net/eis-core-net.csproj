@@ -30,8 +30,6 @@
   
      <PackageReference Include="Quartz.Extensions.Hosting" Version="3.3.3" />
   
-     <PackageReference Include="System.Threading.Channels" Version="5.0.0" />
-  
 
   </ItemGroup>
 

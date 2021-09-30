@@ -1,14 +1,14 @@
 using System;
 using EisCore.Application.Interfaces;
 
-namespace eis_core_net.src.Infrastructure.Services
+namespace EisCore.Infrastructure.Services
 {
     public class InboxOutboxPollerJobSchedule : IJobSchedule
     {
         IConfigurationManager _configManager;
         public InboxOutboxPollerJobSchedule(IConfigurationManager configManager)
         {
-            JobType = typeof(QuartzInboxOutboxPollerJob);
+            JobType = typeof(InboxOutboxPollerJob);
 
             _configManager = configManager;
 
@@ -17,6 +17,6 @@ namespace eis_core_net.src.Infrastructure.Services
         public Type JobType { get; }
 
         public string GetCronExpression()
-        { return _configManager.GetBrokerConfiguration().CronExpression; }
+        { return "0/5 * 1/1 ? * *"; }
     }
 }

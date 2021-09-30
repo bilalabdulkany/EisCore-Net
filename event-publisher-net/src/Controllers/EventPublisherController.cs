@@ -15,18 +15,13 @@ namespace event_publisher_net.Controllers
     public class EventPublisherController : ControllerBase
     {
        
-        private IEventPublisher _eventPublisher;
-        private IEventProcessor _eventProcessor;
-
-        
-
+        private IEventPublisherService _eventPublisher;
         private readonly ILogger<EventPublisherController> _logger;
 
-        public EventPublisherController(ILogger<EventPublisherController> logger,IEventPublisher eventPublisher,IEventProcessor eventProcessor)
+        public EventPublisherController(ILogger<EventPublisherController> logger,IEventPublisherService eventPublisher)
         {
 
-          this._eventPublisher=eventPublisher;
-          this._eventProcessor=eventProcessor;            
+          this._eventPublisher=eventPublisher;              
           this._logger=logger;
         }
 

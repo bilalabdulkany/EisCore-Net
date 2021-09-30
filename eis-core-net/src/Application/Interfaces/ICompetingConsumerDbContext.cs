@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using EisCore.Application.Models;
 namespace EisCore.Application.Interfaces
 {
     public interface ICompetingConsumerDbContext

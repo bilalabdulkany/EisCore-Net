@@ -1,8 +1,6 @@
 using System;
 using EisCore.Application.Interfaces;
-using EisCore.Infrastructure.Services;
-
-namespace EisCore
+namespace EisCore.Infrastructure.Services
 {
 
     public class ConsumerKeepAliveJobSchedule : IJobSchedule
@@ -10,7 +8,7 @@ namespace EisCore
         IConfigurationManager _configManager;
         public ConsumerKeepAliveJobSchedule(IConfigurationManager configManager)
         {
-            JobType = typeof(QuartzKeepAliveEntryJob);
+            JobType = typeof(KeepAliveEntryPollerJob);
             _configManager = configManager;
 
         }

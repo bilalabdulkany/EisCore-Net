@@ -1,10 +1,10 @@
 using System;
+using EisCore.Domain.Entities;
 
 namespace EisCore.Application.Interfaces
 {
-    public interface IEventPublisher : IDisposable
+    public interface IEventPublisherService
     {
         void publish(IMessageEISProducer messageObject);
-
     }
 }
