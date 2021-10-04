@@ -34,6 +34,7 @@ namespace EisCore
             sourceName = _configManager.GetAppSettings().Name;
             testHostIp = Guid.NewGuid().ToString();
             _dbContext.setHostIpAddress(testHostIp);
+            ConsumerKeepAliveTask();
         }
 
 
@@ -145,14 +146,14 @@ namespace EisCore
             {
                 _brokerConnectionFactory.QueueToPublisherTopic(eisEvent);
                 var recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED).Result;
-                _log.LogInformation("Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus);
+                _log.LogInformation("OUTBOX::Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus);
             }
 
             if (!isCurrent)//First publish the messages in OUTBOX queue if not empty
             {
                 _brokerConnectionFactory.QueueToPublisherTopic(eisEvent);
                 var recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED).Result;
-                _log.LogInformation("Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus);
+                _log.LogInformation("OUTBOX::TIMER::Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus);
             }//TODO process current events
 
             //If it is coming from timer, isCurrent=false, and GlobalVariables.IsUnprocessedOutMessagePresent is true -- do nothing - let the 
@@ -182,7 +183,7 @@ namespace EisCore
 
 
 
-        public async Task KeepAliveTask()
+        public async Task ConsumerKeepAliveTask()
         {
             await Console.Out.WriteLineAsync("#########Consumer Connection Quartz Job... Cron: [" + _configManager.GetBrokerConfiguration().CronExpression + "]");
 

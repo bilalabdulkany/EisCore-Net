@@ -7,7 +7,11 @@
 
   <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
+    <PackageReference Include="Dapper" Version="2.0.78" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="2.0.1" />
   </ItemGroup>
+
+  
 
   <ItemGroup>
     <ProjectReference Include="..\..\Project Folder\eis-core-net\eis-core-net.csproj" />

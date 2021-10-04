@@ -29,7 +29,7 @@ namespace EisCore.Infrastructure.Configuration
         private IConnectionFactory _factory;
         protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
         private IMessageConsumer _MessageConsumer;
-        private IMessageProducer _MessagePublisher;      
+        private IMessageProducer _MessagePublisher;
         private Uri _connecturi;
         //private static bool IsTransportInterrupted = true;
         ConnectionInterruptedListener interruptedListener = null;
@@ -41,18 +41,20 @@ namespace EisCore.Infrastructure.Configuration
 
         public BrokerConnectionFactory(ILogger<BrokerConnectionFactory> log,
         IConfigurationManager configurationManager, BrokerConfiguration brokerConfig,
-        IEventInboxOutboxDbContext eventINOUTDbContext,EventHandlerRegistry eventHandlerRegistry)
+        IEventInboxOutboxDbContext eventINOUTDbContext, EventHandlerRegistry eventHandlerRegistry)
         {
             this._log = log;
             this._configManager = configurationManager;
-            this._appSettings = configurationManager.GetAppSettings();           
+            this._appSettings = configurationManager.GetAppSettings();
             _brokerConfiguration = _configManager.GetBrokerConfiguration();
-            this._eventRegistry=eventHandlerRegistry;
+            this._eventRegistry = eventHandlerRegistry;
             var brokerUrl = _configManager.GetBrokerUrl();
             _log.LogInformation("BrokerConnectionFactory >> Initializing broker connections.");
             _log.LogInformation("Broker - {brokerUrl}", brokerUrl);
             _connecturi = new Uri(brokerUrl);
             IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(_connecturi);
+
+
 
             _factory = factory;
             _eventINOUTDbContext = eventINOUTDbContext;
@@ -242,11 +244,23 @@ namespace EisCore.Infrastructure.Configuration
                 eisEvent = JsonSerializer.Deserialize<EisEvent>(queueMessage.Text);
                 //TODO check json deserializer exception handling in IN OUT BOX
                 _log.LogInformation("Receiving the message: {eisEvent}", eisEvent.ToString());
-                int recordInsertCount = _eventINOUTDbContext.TryEventInsert(eisEvent, InboundQueue, AtLeastOnceDeliveryDirection.IN).Result;               
-                UtilityClass.ConsumeEvent(eisEvent,InboundQueue,_eventRegistry,_configManager.GetAppSettings().Name,_log);
-                var updatedStatus=_eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED);
-                
-                _log.LogInformation("INBOX insert status: {a}, Processed status {b}", recordInsertCount,updatedStatus);
+                int recordInsertCount = _eventINOUTDbContext.TryEventInsert(eisEvent, InboundQueue, AtLeastOnceDeliveryDirection.IN).Result;
+                ///If the record is new, and status is 1, then process the data
+                /// 
+                /// 
+                if (recordInsertCount == 1)
+                {
+                    _log.LogInformation("INBOX::NEW [Insert] status: {a}", recordInsertCount);
+                    UtilityClass.ConsumeEvent(eisEvent, InboundQueue, _eventRegistry, _configManager.GetAppSettings().Name, _log);
+                    var updatedStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED);
+                    _log.LogInformation("INBOX::NEW [Processed] status: {b}", updatedStatus);
+                }
+                else
+                {
+                    _log.LogInformation("INBOX::OLD record already exists. insert status: {a}", recordInsertCount);
+                }
+
+
                 receivedMsg.Acknowledge();
             }
             catch (Exception ex)

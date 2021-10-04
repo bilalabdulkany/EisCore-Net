@@ -17,7 +17,7 @@ namespace EisCore
     public class EventPublisherService : IEventPublisherService
     {
 
-        private readonly IConfigurationManager _configManager;      
+        private readonly IConfigurationManager _configManager;
         private readonly ILogger<EventPublisherService> _log;
 
         private readonly IMessageQueueManager _messageQueueManager;
@@ -45,19 +45,21 @@ namespace EisCore
                 _log.LogInformation("sending object");
                 EisEvent eisEvent = this.getEisEvent(messageObject);
                 var OutboundTopic = _configManager.GetAppSettings().OutboundTopic;
-                var watch = new System.Diagnostics.Stopwatch();
 
-                watch.Start();
+
                 int recordInsertCount = _eventINOUTDbContext.TryEventInsert(eisEvent, OutboundTopic, AtLeastOnceDeliveryDirection.OUT).Result;
 
-                Console.WriteLine($"publish Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue called");
+                if (recordInsertCount == 1)
 
-
-                Task.Run(()=>_messageQueueManager.QueueToPublisherTopic(eisEvent,true));//Execute method in separate thread
-                
-
-                watch.Stop();
-                _log.LogInformation("Message Sent! time taken {milliseconds} ms to Topic: {topic}", watch.ElapsedMilliseconds, _configManager.GetAppSettings().OutboundTopic);
+                {
+                    _log.LogInformation("OUTBOX::NEW [Insert] status: {a}", recordInsertCount);
+                    Console.WriteLine($"publish Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue called");
+                    Task.Run(() => _messageQueueManager.QueueToPublisherTopic(eisEvent, true));//Execute method in separate thread
+                }
+                else
+                {
+                    _log.LogInformation("OUTBOX::OLD record already published. insert status: {a}", recordInsertCount);
+                }
             }
 
             catch (Exception e)

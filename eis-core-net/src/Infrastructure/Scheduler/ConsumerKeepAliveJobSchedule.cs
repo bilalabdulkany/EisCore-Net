@@ -8,7 +8,7 @@ namespace EisCore.Infrastructure.Services
         IConfigurationManager _configManager;
         public ConsumerKeepAliveJobSchedule(IConfigurationManager configManager)
         {
-            JobType = typeof(KeepAliveEntryPollerJob);
+            JobType = typeof(ConsumerKeepAliveEntryPollerJob);
             _configManager = configManager;
 
         }

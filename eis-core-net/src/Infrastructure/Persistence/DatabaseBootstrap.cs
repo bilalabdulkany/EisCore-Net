@@ -25,6 +25,7 @@ namespace EisCore.Infrastructure.Persistence
             this._eventINOUTDbContext = eventINOUTDbContext;
             _databaseName = this._configuration["DatabaseSource"];
             Setup();
+            InitiateUnprocessedINOUTMessages();
         }
         public void Setup()
         {
@@ -84,9 +85,17 @@ namespace EisCore.Infrastructure.Persistence
             {
                 GlobalVariables.IsUnprocessedInMessagePresent = true;
             }
+            else
+            {
+                GlobalVariables.IsUnprocessedInMessagePresent = false;
+            }
             if (outboxEventList.Count > 0)
             {
                 GlobalVariables.IsUnprocessedOutMessagePresent = true;
+            }
+            else
+            {
+                GlobalVariables.IsUnprocessedOutMessagePresent = false;
             }
 
         }

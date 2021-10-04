@@ -8,6 +8,6 @@ namespace EisCore.Application.Interfaces
         void ConsumeEvent(EisEvent eisEvent, string queueName);
         Task InboxOutboxPollerTask();
         void QueueToPublisherTopic(EisEvent eisEvent, bool isCurrent);
-        Task KeepAliveTask();
+        Task ConsumerKeepAliveTask();
     }
 }

@@ -13,11 +13,11 @@ namespace EisCore.Infrastructure.Services
 {
 
     [DisallowConcurrentExecution]
-    public class KeepAliveEntryPollerJob : IJob
+    public class ConsumerKeepAliveEntryPollerJob : IJob
     {
         //private readonly ILogger<KeepAliveEntryPollerJob> _log;
         private IMessageQueueManager _messageQueueManager;        
-        public KeepAliveEntryPollerJob(IMessageQueueManager messageQueueManager)
+        public ConsumerKeepAliveEntryPollerJob(IMessageQueueManager messageQueueManager)
         {
           
             this._messageQueueManager = messageQueueManager;
@@ -26,7 +26,7 @@ namespace EisCore.Infrastructure.Services
 
         public async Task Execute(IJobExecutionContext context)
         {
-            await this._messageQueueManager.KeepAliveTask();
+            await this._messageQueueManager.ConsumerKeepAliveTask();
 
         }
 

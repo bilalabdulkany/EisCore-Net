@@ -47,7 +47,7 @@ namespace EisCore.Infrastructure.Configuration
             });
 
             // Add the required Quartz.NET services
-            services.AddSingleton<KeepAliveEntryPollerJob>();
+            services.AddSingleton<ConsumerKeepAliveEntryPollerJob>();
             services.AddSingleton<InboxOutboxPollerJob>();
             services.AddSingleton<IJobSchedule, ConsumerKeepAliveJobSchedule>();
             services.AddSingleton<IJobSchedule, InboxOutboxPollerJobSchedule>();
