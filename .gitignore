@@ -3,3 +3,5 @@
 /event-publisher-net/TestCore.sqlite
 /event-publisher-net/bin/**
 /event-publisher-net/obj/**
+/event-consumer-net/bin/**
+/event-consumer-net/obj/**

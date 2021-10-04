@@ -15,7 +15,7 @@ namespace event_consumer_net.Infrastructure.Services
         private readonly StaleEventCheckDbContext staleEventCheckDbContext;
         private readonly IdempotentEventCheckDbContext idempotentEventCheckDbContext;
         private readonly ILogger<EventMessageProcessor> _logger;
-        private Payload[] LastConsumerPayload;
+        public static Payload[] LastConsumerPayload;
         public EventMessageProcessor(ILogger<EventMessageProcessor> logger)
         {
             _logger = logger;
