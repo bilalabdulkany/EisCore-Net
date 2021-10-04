@@ -8,24 +8,24 @@ using Microsoft.Extensions.Logging;
 
 
 namespace EventProcessorController.Controllers
-{    
+{
     [ApiController]
     [Route("[controller]")]
     public class EventProcessorController : ControllerBase
     {
-        private readonly EventProcessor _eventProcessor;
+
 
         //private readonly ILogger<WeatherForecastController> _logger;
 
-        public EventProcessorController(EventProcessor eventProcessor)
+        public EventProcessorController()
         {
-            _eventProcessor = eventProcessor;
+
         }
 
         [HttpGet]
-        public IActionResult Consume(){
-            Console.WriteLine("##Consuming Message##");
-            _eventProcessor.RunConsumerEventListener();
+        public IActionResult Consume()
+        {
+            Console.WriteLine("##Consuming Message##");            
             return Ok();
         }
     }

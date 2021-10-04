@@ -20,8 +20,8 @@ namespace EisCore.Infrastructure.Configuration
     {
         private bool isDisposed = false;
         private readonly ILogger<BrokerConnectionFactory> _log;
-        private BrokerConfiguration _brokerConfiguration;
-        private ApplicationSettings _appSettings;
+        private readonly BrokerConfiguration _brokerConfiguration;
+        private readonly ApplicationSettings _appSettings;
         readonly IConfigurationManager _configManager;
         private ISession _PublisherSession;
         public IConnection _ConsumerConnection;
@@ -30,7 +30,7 @@ namespace EisCore.Infrastructure.Configuration
         protected static TimeSpan receiveTimeout = TimeSpan.FromSeconds(10);
         private IMessageConsumer _MessageConsumer;
         private IMessageProducer _MessagePublisher;
-        private Uri _connecturi;
+        private readonly Uri _connecturi;
         //private static bool IsTransportInterrupted = true;
         ConnectionInterruptedListener interruptedListener = null;
         // ConnectionResumedListener connectionResumedListener = null;

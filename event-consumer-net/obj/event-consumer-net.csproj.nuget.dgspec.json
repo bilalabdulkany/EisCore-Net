@@ -1,30 +1,30 @@
 {
   "format": 1,
   "restore": {
-    "d:\\Bilal\\Project Folder\\event-consumer-net\\event-consumer-net.csproj": {}
+    "D:\\Bilal\\Project Folder\\EisCore-Net\\event-consumer-net\\event-consumer-net.csproj": {}
   },
   "projects": {
-    "d:\\Bilal\\Project Folder\\eis-core-net\\eis-core-net.csproj": {
+    "D:\\Bilal\\Project Folder\\EisCore-Net\\eis-core-net\\eis-core-net.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\Bilal\\Project Folder\\eis-core-net\\eis-core-net.csproj",
+        "projectUniqueName": "D:\\Bilal\\Project Folder\\EisCore-Net\\eis-core-net\\eis-core-net.csproj",
         "projectName": "eis-core-net",
-        "projectPath": "d:\\Bilal\\Project Folder\\eis-core-net\\eis-core-net.csproj",
+        "projectPath": "D:\\Bilal\\Project Folder\\EisCore-Net\\eis-core-net\\eis-core-net.csproj",
         "packagesPath": "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\",
-        "outputPath": "d:\\Bilal\\Project Folder\\eis-core-net\\obj\\",
+        "outputPath": "D:\\Bilal\\Project Folder\\EisCore-Net\\eis-core-net\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Muhammed.bilal\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net5.0"
+          "netstandard2.0"
         ],
         "sources": {
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net5.0": {
-            "targetAlias": "net5.0",
+          "netstandard2.0": {
+            "targetAlias": "netstandard2.0",
             "projectReferences": {}
           }
         },
@@ -35,12 +35,20 @@
         }
       },
       "frameworks": {
-        "net5.0": {
-          "targetAlias": "net5.0",
+        "netstandard2.0": {
+          "targetAlias": "netstandard2.0",
           "dependencies": {
-            "Apache.NMS.ActiveMQ.NetCore": {
+            "Apache.NMS.ActiveMQ": {
               "target": "Package",
-              "version": "[1.7.3, )"
+              "version": "[1.7.2, )"
+            },
+            "Dapper": {
+              "target": "Package",
+              "version": "[2.0.78, )"
+            },
+            "Microsoft.Data.Sqlite": {
+              "target": "Package",
+              "version": "[2.0.1, )"
             },
             "Microsoft.Extensions.Configuration": {
               "target": "Package",
@@ -62,21 +70,19 @@
               "target": "Package",
               "version": "[5.0.0, )"
             },
-            "Serilog.AspNetCore": {
+            "NETStandard.Library": {
+              "suppressParent": "All",
               "target": "Package",
-              "version": "[4.1.0, )"
+              "version": "[2.0.3, )",
+              "autoReferenced": true
             },
-            "Serilog.Extensions.Logging": {
+            "Quartz": {
               "target": "Package",
-              "version": "[3.0.1, )"
+              "version": "[3.3.3, )"
             },
-            "Serilog.Settings.Configuration": {
+            "Quartz.Extensions.Hosting": {
               "target": "Package",
-              "version": "[3.2.0, )"
-            },
-            "Serilog.Sinks.Console": {
-              "target": "Package",
-              "version": "[4.0.0, )"
+              "version": "[3.3.3, )"
             }
           },
           "imports": [
@@ -89,23 +95,18 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "frameworkReferences": {
-            "Microsoft.NETCore.App": {
-              "privateAssets": "all"
-            }
-          },
           "runtimeIdentifierGraphPath": "D:\\opt\\.NET_SDK\\sdk\\5.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "d:\\Bilal\\Project Folder\\event-consumer-net\\event-consumer-net.csproj": {
+    "D:\\Bilal\\Project Folder\\EisCore-Net\\event-consumer-net\\event-consumer-net.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\Bilal\\Project Folder\\event-consumer-net\\event-consumer-net.csproj",
+        "projectUniqueName": "D:\\Bilal\\Project Folder\\EisCore-Net\\event-consumer-net\\event-consumer-net.csproj",
         "projectName": "event-consumer-net",
-        "projectPath": "d:\\Bilal\\Project Folder\\event-consumer-net\\event-consumer-net.csproj",
+        "projectPath": "D:\\Bilal\\Project Folder\\EisCore-Net\\event-consumer-net\\event-consumer-net.csproj",
         "packagesPath": "C:\\Users\\Muhammed.bilal\\.nuget\\packages\\",
-        "outputPath": "d:\\Bilal\\Project Folder\\event-consumer-net\\obj\\",
+        "outputPath": "D:\\Bilal\\Project Folder\\EisCore-Net\\event-consumer-net\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Muhammed.bilal\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -120,8 +121,8 @@
           "net5.0": {
             "targetAlias": "net5.0",
             "projectReferences": {
-              "d:\\Bilal\\Project Folder\\eis-core-net\\eis-core-net.csproj": {
-                "projectPath": "d:\\Bilal\\Project Folder\\eis-core-net\\eis-core-net.csproj"
+              "D:\\Bilal\\Project Folder\\EisCore-Net\\eis-core-net\\eis-core-net.csproj": {
+                "projectPath": "D:\\Bilal\\Project Folder\\EisCore-Net\\eis-core-net\\eis-core-net.csproj"
               }
             }
           }
@@ -136,6 +137,14 @@
         "net5.0": {
           "targetAlias": "net5.0",
           "dependencies": {
+            "Dapper": {
+              "target": "Package",
+              "version": "[2.0.78, )"
+            },
+            "Microsoft.Data.Sqlite": {
+              "target": "Package",
+              "version": "[2.0.1, )"
+            },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[5.6.3, )"

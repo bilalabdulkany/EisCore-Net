@@ -13,12 +13,12 @@ namespace EisCore
 {
     public class MessageQueueManager : IMessageQueueManager
     {
-        private IBrokerConnectionFactory _brokerConnectionFactory;
-        private IEventInboxOutboxDbContext _eventINOUTDbContext;
-        private ICompetingConsumerDbContext _dbContext;
-        private IConfigurationManager _configManager;
-        private ILogger<MessageQueueManager> _log;
-        private EventHandlerRegistry _eventRegistry;
+        private readonly IBrokerConnectionFactory _brokerConnectionFactory;
+        private readonly IEventInboxOutboxDbContext _eventINOUTDbContext;
+        private readonly ICompetingConsumerDbContext _dbContext;
+        private readonly IConfigurationManager _configManager;
+        private readonly ILogger<MessageQueueManager> _log;
+        private readonly EventHandlerRegistry _eventRegistry;
         private string sourceName;
         //TODO testing purposes
         private string testHostIp;
@@ -119,8 +119,7 @@ namespace EisCore
                             //TODO check null
                             EisEventInboxOutbox dbEvents = events;
                             EisEvent eisEvent = JsonSerializer.Deserialize<EisEvent>(events.eisEvent);
-                            _eventID = eisEvent.EventID;
-
+                            _eventID = eisEvent.EventID;                            
                             QueueToPublisherTopic(eisEvent, false);
                             recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.PROCESSED).Result;
                             _log.LogInformation("Processed {e}, with status {s}", _eventID.ToString(), recordUpdateStatus);

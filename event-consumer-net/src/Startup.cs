@@ -10,7 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using EisCore;
+using EisCore.Infrastructure.Configuration;
+using EisCore.Application.Interfaces;
+using EisCore.Domain.Entities;
+using event_consumer_net.Infrastructure.Services;
 
 namespace event_consumer_net
 {
@@ -32,8 +35,8 @@ namespace event_consumer_net
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "event_consumer_net", Version = "v1" });
             });
-              EisStartup.ConfigureServices(services);
-            
+            EisStartup.ConfigureServices(services, this.Configuration);
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -54,7 +57,20 @@ namespace event_consumer_net
             {
                 endpoints.MapControllers();
             });
-            app.ApplicationServices.GetService<EventProcessor>().RunConsumerEventListener();
+            app.ApplicationServices.GetService<IMessageQueueManager>();
+            app.ApplicationServices.GetService<IDatabaseBootstrap>();
+            EventMessageProcessor eventProcessor = null;
+            // get scoped factory
+            var scopedFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();
+            // create a scope
+            using (var scope = scopedFactory.CreateScope())
+            {
+                // then resolve the services and execute it
+                eventProcessor = (EventMessageProcessor)scope.ServiceProvider.GetRequiredService<IMessageProcessor>();
+            }
+            EventHandlerRegistry eventHandlerRegistry = app.ApplicationServices.GetService<EventHandlerRegistry>();
+            //eventProcessor = (EventMessageProcessor)app.ApplicationServices.GetService<IMessageProcessor>();
+            eventHandlerRegistry.AddMessageProcessor(eventProcessor);
         }
     }
 }
