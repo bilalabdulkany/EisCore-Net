@@ -14,14 +14,23 @@ namespace event_publisher_net
     {
         public static void Main(string[] args)
         {
-             string outputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] {Message}{NewLine}{Exception}";
-                Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console()
-                .WriteTo.Debug()
-                .WriteTo.File("\\Logs\\Demo.txt",
-                    rollingInterval: RollingInterval.Day, outputTemplate:
-                    outputTemplate).CreateLogger();
-            CreateHostBuilder(args).Build().Run();
+             
+             var configuration = new ConfigurationBuilder()
+             .AddJsonFile("appsettings.json")
+             .Build();
+             
+             Log.Logger = new LoggerConfiguration()
+             .ReadFrom.Configuration(configuration)
+             .CreateLogger();
+
+            try {
+                Log.Information("Applicaiton booting up...");
+                CreateHostBuilder(args).Build().Run();
+            } catch(Exception ex) {
+                Log.Fatal(ex, "The application failed to start correctly.");
+            } finally {
+                Log.CloseAndFlush();
+            }
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
