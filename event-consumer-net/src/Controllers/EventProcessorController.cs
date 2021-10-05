@@ -28,7 +28,7 @@ namespace EventProcessorController.Controllers
         {
             string eventConsumed = "Last Consumed Event:: " + EventMessageProcessor.LastConsumerPayload[0];
             Console.WriteLine(eventConsumed);
-            return Ok();
+            return Ok(eventConsumed);
         }
     }
 }
