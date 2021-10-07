@@ -6,31 +6,37 @@ using event_consumer_net.Infrastructure.Persistence;
 using event_consumer_net.Application.Model;
 using System.Collections.Generic;
 using System.Linq;
+using event_consumer_net.Application.Interface;
 
 namespace event_consumer_net.Infrastructure.Services
 {
     public class EventMessageProcessor : IMessageProcessor
     {
 
-        private readonly StaleEventCheckDbContext staleEventCheckDbContext;
-        private readonly IdempotentEventCheckDbContext idempotentEventCheckDbContext;
+        private readonly IStaleEventCheckDbContext _staleEventCheckDbContext;
+        private readonly IIdempotentEventCheckDbContext _idempotentEventCheckDbContext;
         private readonly ILogger<EventMessageProcessor> _logger;
-        public static Payload[] LastConsumerPayload;
-        public EventMessageProcessor(ILogger<EventMessageProcessor> logger)
+        public static Payload[] LastConsumerPayload= new Payload[1];
+        public EventMessageProcessor(ILogger<EventMessageProcessor> logger,IIdempotentEventCheckDbContext idempotentEventCheckDbContext,IStaleEventCheckDbContext staleEventCheckDbContext)
         {
-            _logger = logger;
+            this._logger = logger;
+            this._staleEventCheckDbContext=staleEventCheckDbContext;
+            this._idempotentEventCheckDbContext=idempotentEventCheckDbContext;
+
         }
         public void Process(Payload payload, string eventType)
         {
             _logger.LogInformation("inside consumer's process method");
             SortieContent payloadContent = payload.ConvertContent<SortieContent>();
+            _logger.LogInformation("{a},{b},{c}",payloadContent.MId, eventType, payloadContent.EventTimestamp);
             //Stale event check - to determine if timestamp of new event is older than the existing event in db
-            StaleEventCheck check = staleEventCheckDbContext.FindMIdAndEventType(payloadContent.MId, eventType);
+            StaleEventCheck check = _staleEventCheckDbContext.FindMIdAndEventType(payloadContent.MId, eventType);
             if (check == null)
             {
+                _logger.LogInformation("Inside stale check");
                 //Save StaleEventCheck to DB
                 StaleEventCheck checkToSave = new StaleEventCheck("0", payloadContent.MId, eventType, payloadContent.EventTimestamp);
-                staleEventCheckDbContext.Save(checkToSave);
+                _staleEventCheckDbContext.Save(checkToSave);
             }
             else
             {
@@ -42,15 +48,16 @@ namespace event_consumer_net.Infrastructure.Services
             }
 
             //Idempotent event check - to determine if the data is semantically similar rather than event IDs
-            List<IdempotentEventCheck> IdempotentEventCheckListFromDb = idempotentEventCheckDbContext.FindMIdAndEventType(payloadContent.MId);
+            List<IdempotentEventCheck> IdempotentEventCheckListFromDb = _idempotentEventCheckDbContext.FindMIdAndEventType(payloadContent.MId);
             //Set the SortieContent from the payload to the idempotentEventCheckList in memory
             List<IdempotentEventCheck> idempotentEventCheckList = GetIdempotentEventCheckList(payloadContent);
             if (IdempotentEventCheckListFromDb.Count == 0)
             {
+                _logger.LogInformation("IdempotentEventCheckListFromDb");
                 //Save all data to DB
                 foreach (IdempotentEventCheck idempotentEventCheck in idempotentEventCheckList)
                 {
-                    idempotentEventCheckDbContext.Save(idempotentEventCheck);
+                    _idempotentEventCheckDbContext.Save(idempotentEventCheck);
                 }
             }
             else
@@ -69,6 +76,7 @@ namespace event_consumer_net.Infrastructure.Services
             }
 
             //Payload business logic
+            
             LastConsumerPayload[0] = payload;
             _logger.LogInformation("Payload :: {p}", payloadContent);
         }
@@ -83,6 +91,7 @@ namespace event_consumer_net.Infrastructure.Services
                 foreach (CrEvents crEvents in payloadContent.CrEvents)
                 {
                     idempotentEventCheck = new IdempotentEventCheck();
+                    idempotentEventCheck.Id=crEvents.Id;
                     idempotentEventCheck.MId = payloadContent.MId;
                     idempotentEventCheck.CId = crEvents.CId;
                     idempotentEventCheck.EventCode = crEvents.Event.Code;

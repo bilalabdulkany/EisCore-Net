@@ -9,7 +9,7 @@ namespace EisCore.Application.Interfaces
     {
         Task<List<EisEventInboxOutbox>> GetAllUnprocessedEvents(string direction);
         Task<int> TryEventInsert(EisEvent eisEvent, string topicQueueName, string direction);
-        Task<int> UpdateEventStatus(string eventId, string eventStatus);
+        Task<int> UpdateEventStatus(string eventId, string eventStatus,string direction);
     }
 
 }

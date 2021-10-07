@@ -14,6 +14,8 @@ using EisCore.Infrastructure.Configuration;
 using EisCore.Application.Interfaces;
 using EisCore.Domain.Entities;
 using event_consumer_net.Infrastructure.Services;
+using event_consumer_net.Application.Interface;
+using event_consumer_net.Infrastructure.Persistence;
 
 namespace event_consumer_net
 {
@@ -36,6 +38,9 @@ namespace event_consumer_net
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "event_consumer_net", Version = "v1" });
             });
             EisStartup.ConfigureServices(services, this.Configuration);
+            services.AddScoped<IMessageProcessor, EventMessageProcessor>();
+            services.AddSingleton<IIdempotentEventCheckDbContext,IdempotentEventCheckDbContext>();
+            services.AddSingleton<IStaleEventCheckDbContext,StaleEventCheckDbContext>();
 
         }
 

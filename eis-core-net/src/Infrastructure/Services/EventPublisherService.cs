@@ -39,27 +39,12 @@ namespace EisCore
         public void publish(IMessageEISProducer messageObject)
         {
             try
-            {
-                //TODO check if connection is stable and up
-                //  
+            {               
                 _log.LogInformation("sending object");
                 EisEvent eisEvent = this.getEisEvent(messageObject);
-                var OutboundTopic = _configManager.GetAppSettings().OutboundTopic;
+                Console.WriteLine($"publish Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue called");
+                Task.Run(() => _messageQueueManager.QueueToPublisherTopic(eisEvent, true));//Execute method in separate thread
 
-
-                int recordInsertCount = _eventINOUTDbContext.TryEventInsert(eisEvent, OutboundTopic, AtLeastOnceDeliveryDirection.OUT).Result;
-
-                if (recordInsertCount == 1)
-
-                {
-                    _log.LogInformation("OUTBOX::NEW [Insert] status: {a}", recordInsertCount);
-                    Console.WriteLine($"publish Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue called");
-                    Task.Run(() => _messageQueueManager.QueueToPublisherTopic(eisEvent, true));//Execute method in separate thread
-                }
-                else
-                {
-                    _log.LogInformation("OUTBOX::OLD record already published. insert status: {a}", recordInsertCount);
-                }
             }
 
             catch (Exception e)
@@ -76,7 +61,7 @@ namespace EisCore
             eisEvent.TraceId = messageProducer.getTraceId();
             eisEvent.SpanId = Guid.NewGuid().ToString();
             eisEvent.CreatedDate = DateTime.Now;
-            eisEvent.SourceSystemName = SourceSystemName.MDM;//TODO get the name from properies
+            eisEvent.SourceSystemName = _configManager.GetSourceSystemName();
             eisEvent.Payload = messageProducer.getPayLoad();
             return eisEvent;
         }

@@ -3,18 +3,20 @@
       "protocol": "failover:(tcp://",
       "url": "localhost:61616)",
       "username": "admin",
-      "password": "admin"
+      "password": "admin",
+      "CronExpression":"0/20 * 1/1 ? * *",
+      "RefreshInterval": 1
   },
 
     "ApplicationSettings": [{
       "Name":"FLYING_PROCESS",      
       "OutboundTopic": "topic.outbound.flying.activity",
-      "InboundQueue": "topic.outbound.flying.activity::queue.inbound.flying.activity"
+      "InboundQueue": "queue.inbound.mdm"
     },
     {
       "Name":"MDM",      
       "OutboundTopic": "topic.outbound.mdm",
-      "InboundQueue": "topic.outbound.mdm::queue.inbound.mdm"
+      "InboundQueue": "queue.inbound.flying.activity"
     }
   ]
   

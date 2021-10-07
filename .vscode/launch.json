@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": ".NET Core Launch (web)",
             "type": "coreclr",
@@ -25,11 +26,11 @@
             }
         },
         {
-            "name": ".NET Core Launch (web) 2",
+            "name": ".NET Core Launch (web) Consumer",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/event-publisher-net/bin/Debug2/net5.0/event-publisher-net.dll",
+            "program": "${workspaceFolder}/event-consumer-net/bin/Debug/net5.0/event-consumer-net.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,

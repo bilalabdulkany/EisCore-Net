@@ -38,7 +38,7 @@ namespace event_publisher_net
             });
 
             EisStartup.ConfigureServices(services, this.Configuration);
-            services.AddScoped<IMessageProcessor, EventMessageProcessor>();
+           // services.AddScoped<IMessageProcessor, EventMessageProcessor>();
 
         }
 

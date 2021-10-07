@@ -59,16 +59,16 @@ namespace EisCore.Infrastructure.Persistence
             return 0;
         }
 
-        public async Task<int> UpdateEventStatus(string eventId, string eventStatus)
+        public async Task<int> UpdateEventStatus(string eventId, string eventStatus,string direction)
         {
             string sql = "UPDATE EIS_EVENT_INBOX_OUTBOX SET IS_EVENT_PROCESSED=@ProcessedStatus WHERE EVENT_ID=@EventId and IN_OUT=@direction";
-            string sqlite = "UPDATE EIS_EVENT_INBOX_OUTBOX SET IS_EVENT_PROCESSED=@eventStatus WHERE EVENT_ID=@eventId ";
+            string sqlite = "UPDATE EIS_EVENT_INBOX_OUTBOX SET IS_EVENT_PROCESSED=@eventStatus WHERE EVENT_ID=@eventId and IN_OUT=@direction ";
             using (var connection = new SqliteConnection(_databaseName))
             {
                 try
                 {
-                    _log.LogInformation("Executing query: {sqlite} with variables [{eventStatus},{eventId}]", sqlite, eventStatus, eventId);
-                    return await connection.ExecuteAsync(sqlite, new { eventStatus, eventId });
+                    _log.LogInformation("Executing query: {sqlite} with variables [{eventStatus},{eventId},{direction}]", sqlite, eventStatus, eventId,direction);
+                    return await connection.ExecuteAsync(sqlite, new { eventStatus, eventId,direction});
                 }
                 catch (Exception e)
                 {

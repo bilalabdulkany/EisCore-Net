@@ -24,9 +24,11 @@ namespace EisCore.Infrastructure.Configuration
         private ApplicationSettings _appSettings;
         private IConfiguration _configuration;
 
+        private string sourceSystemName { get; set; }
+
         public ConfigurationManager(ILogger<ConfigurationManager> log, IConfiguration configuration)
         {
-            
+
             this._log = log;
             _log.LogInformation("ConfigurationManager constructor");
             this._configuration = configuration;
@@ -35,27 +37,35 @@ namespace EisCore.Infrastructure.Configuration
 
         private void BindAppSettingsToObjects()
         {
-            _log.LogInformation("Loading application configurations");
+            _log.LogInformation("Loading application configurations....");
+
             var assembly = Assembly.GetExecutingAssembly();
             var configurationBuilder = new ConfigurationBuilder();
             string name = "EisCore.eissettings.json";
             string assemblyName = assembly.ManifestModule.Name.Replace(".dll", string.Empty);
             string resourcePath = assembly.GetManifestResourceNames()[0];
+
             Stream stream = assembly.GetManifestResourceStream(name);
             configurationBuilder.AddJsonStream(stream);
             var brokerConfigSection = configurationBuilder.Build();
             var brokerConfig = new BrokerConfiguration();
+
             brokerConfigSection.GetSection("BrokerConfiguration").Bind(brokerConfig);
-            //_refreshInterval=brokerConfigSection.GetSection("eis").GetValue<int>("RefreshInterval");
+
 
             _brokerConfiguration = brokerConfig;
+            this.sourceSystemName = this._configuration["eis:source-system-name"];
+
             var AppSettingsList = new List<ApplicationSettings>();
             brokerConfigSection.GetSection("ApplicationSettings").Bind(AppSettingsList);
             _appSettings = GetAppSettingsFromList(AppSettingsList);
+
+
+            _log.LogInformation("BindAppSettingsToObjects::" + this.sourceSystemName);
             var environment = this._configuration["environment:profile"];
             if (environment != null)
             {
-                name = assemblyName + ".eissettings." + environment + ".json";
+                name = resourcePath.Replace(".json", string.Empty) + "." + environment + ".json";
                 _log.LogInformation("loading : {n}", name);
                 stream = assembly.GetManifestResourceStream(name);
                 configurationBuilder.AddJsonStream(stream);
@@ -75,12 +85,13 @@ namespace EisCore.Infrastructure.Configuration
             return null;
         }
         private ApplicationSettings GetAppSettingsFromList(List<ApplicationSettings> AppSettingsList)
-        {
+        {            
 
             foreach (ApplicationSettings appSettings in AppSettingsList)
             {
-                if (appSettings.Name.Equals(SourceSystemName.MDM.ToString()))
+                if (appSettings.Name.Equals(GetSourceSystemName()))
                 {
+                    _log.LogInformation("Returning::" + appSettings);
                     return appSettings;
                 }
             }
@@ -106,6 +117,11 @@ namespace EisCore.Infrastructure.Configuration
             {
                 this.isDisposed = true;
             }
+        }
+
+        public string GetSourceSystemName()
+        {
+            return this.sourceSystemName==null?"FLYING_PROCESS":this.sourceSystemName;
         }
 
         #endregion

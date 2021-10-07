@@ -36,7 +36,7 @@ namespace EisCore.Application.Util
             }
             catch (Exception e)
             {
-                log.LogError("{app}: Processing of message with id {id} failed with error {er}", sourceName, eisEvent.EventID, e.Message);
+                log.LogError("{app}: Processing of message with id {id} failed with error {er}", sourceName, eisEvent.EventID, e.StackTrace);
                 throw new Exception($"Processing event with ID > {eisEvent.EventID} failed > {e.Message}");
             }
         }

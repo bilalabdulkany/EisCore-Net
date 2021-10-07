@@ -31,10 +31,14 @@ namespace EisCore
             this._dbContext = dbContext;
             this._log = log;
             this._eventRegistry = eventRegistry;
-            sourceName = _configManager.GetAppSettings().Name;
+            sourceName = _configManager.GetSourceSystemName();
             testHostIp = Guid.NewGuid().ToString();
             _dbContext.setHostIpAddress(testHostIp);
-            ConsumerKeepAliveTask();
+            //Check if any Message Processors are registered, then call the keep alive services
+
+           
+               ConsumerKeepAliveTask();
+           
         }
 
 
@@ -77,13 +81,13 @@ namespace EisCore
 
                              this.ConsumeEvent(eisEvent, dbEvents.TopicQueueName);
 
-                             recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.PROCESSED).Result;
+                             recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.PROCESSED,AtLeastOnceDeliveryDirection.IN).Result;
                              _log.LogInformation("Processed {e}, with status {s}", _eventID.ToString(), recordUpdateStatus);
                          }
                          catch (Exception e)
                          {
                              _log.LogError("Exception occurred while processing > {e}", e.StackTrace);
-                             recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.FAILED).Result;
+                             recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.FAILED,AtLeastOnceDeliveryDirection.IN).Result;
                          }
                      }
                  }
@@ -119,15 +123,15 @@ namespace EisCore
                             //TODO check null
                             EisEventInboxOutbox dbEvents = events;
                             EisEvent eisEvent = JsonSerializer.Deserialize<EisEvent>(events.eisEvent);
-                            _eventID = eisEvent.EventID;                            
+                            _eventID = eisEvent.EventID;
                             QueueToPublisherTopic(eisEvent, false);
-                            recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.PROCESSED).Result;
+                            recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.PROCESSED,AtLeastOnceDeliveryDirection.OUT).Result;
                             _log.LogInformation("Processed {e}, with status {s}", _eventID.ToString(), recordUpdateStatus);
                         }
                         catch (Exception e)
                         {
                             _log.LogError("Exception occurred while processing > {e}", e.StackTrace);
-                            recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.FAILED).Result;
+                            recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.FAILED,AtLeastOnceDeliveryDirection.OUT).Result;
                         }
                     }
 
@@ -143,18 +147,32 @@ namespace EisCore
         {
             if (isCurrent && !GlobalVariables.IsUnprocessedOutMessagePresent)
             {
-                _brokerConnectionFactory.QueueToPublisherTopic(eisEvent);
-                var recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED).Result;
-                _log.LogInformation("OUTBOX::Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus);
+                //****
+                var OutboundTopic = _configManager.GetAppSettings().OutboundTopic;
+
+                int recordInsertCount = _eventINOUTDbContext.TryEventInsert(eisEvent, OutboundTopic, AtLeastOnceDeliveryDirection.OUT).Result;
+
+                if (recordInsertCount == 1)
+                {
+                    _log.LogInformation("OUTBOX::NEW [Insert] status: {a}", recordInsertCount);
+                    //Console.WriteLine($"publish Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue called");
+                    _brokerConnectionFactory.QueueToPublisherTopic(eisEvent);
+                    var recordUpdateStatus1 = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED,AtLeastOnceDeliveryDirection.OUT).Result;
+                    _log.LogInformation("OUTBOX::Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus1);
+
+                }
+                else
+                {
+                    _log.LogInformation("OUTBOX::OLD record already published. insert status: {a}", recordInsertCount);
+                }
             }
 
             if (!isCurrent)//First publish the messages in OUTBOX queue if not empty
             {
                 _brokerConnectionFactory.QueueToPublisherTopic(eisEvent);
-                var recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED).Result;
+                var recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED,AtLeastOnceDeliveryDirection.OUT).Result;
                 _log.LogInformation("OUTBOX::TIMER::Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus);
-            }//TODO process current events
-
+            }
             //If it is coming from timer, isCurrent=false, and GlobalVariables.IsUnprocessedOutMessagePresent is true -- do nothing - let the 
         }
 
@@ -183,11 +201,10 @@ namespace EisCore
 
 
         public async Task ConsumerKeepAliveTask()
-        {
+        {            
             await Console.Out.WriteLineAsync("#########Consumer Connection Quartz Job... Cron: [" + _configManager.GetBrokerConfiguration().CronExpression + "]");
 
-            //TODO Testing only with one System: XYZ
-            var eisGroupKey = SourceSystemName.MDM + "_COMPETING_CONSUMER_GROUP";
+            var eisGroupKey = _configManager.GetSourceSystemName() + "_COMPETING_CONSUMER_GROUP";
             var refreshInterval = _configManager.GetBrokerConfiguration().RefreshInterval;
 
             try

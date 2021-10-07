@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Dapper;
+using event_consumer_net.Application.Interface;
 using event_consumer_net.Application.Model;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
@@ -8,7 +9,9 @@ using Microsoft.Extensions.Logging;
 
 namespace event_consumer_net.Infrastructure.Persistence
 {
-    public class IdempotentEventCheckDbContext
+  
+
+    public class IdempotentEventCheckDbContext : IIdempotentEventCheckDbContext
     {
         private string _databaseName;
         private ILogger<IdempotentEventCheckDbContext> _log;
@@ -37,10 +40,10 @@ namespace event_consumer_net.Infrastructure.Persistence
                     string sql = "SELECT ID, M_ID AS MID, C_ID AS CID, EVENT_CODE AS EVENTCODE FROM IDEMPOTENT_EVENT_CHECK WHERE M_ID =@mId";
 
 
-                    _log.LogDebug("Executing query: {sql} with variables [{a}]", sql, mId);
+                    _log.LogInformation("Executing query: {sql} with variables [{a}]", sql, mId);
 
                     List<IdempotentEventCheck> idempotentEvent = connection.Query<IdempotentEventCheck>(sql, new { mId }).AsList();
-                    _log.LogInformation("Number of events from query: [ {a} ]", idempotentEvent.Count);
+                    _log.LogInformation("Number of events from query: [ {a} ]", idempotentEvent==null?0:idempotentEvent.Count);
                     return idempotentEvent;
                 }
                 catch (Exception e)
@@ -61,7 +64,7 @@ namespace event_consumer_net.Infrastructure.Persistence
                 try
                 {
 
-                    _log.LogDebug("Executing query: {sqlite} with variables [{Id},{mId},{EventCode}]", sqlite, idempotentEventCheck.Id, idempotentEventCheck.MId, idempotentEventCheck.CId, idempotentEventCheck.EventCode);
+                    _log.LogInformation("Executing query: {sqlite} with variables [{Id},{mId},{cId},{EventCode}]", sqlite, idempotentEventCheck.Id, idempotentEventCheck.MId, idempotentEventCheck.CId, idempotentEventCheck.EventCode);
                     return connection.Execute(sqlite, new { idempotentEventCheck.Id, idempotentEventCheck.MId, idempotentEventCheck.CId, idempotentEventCheck.EventCode });
                 }
                 catch (Exception e)

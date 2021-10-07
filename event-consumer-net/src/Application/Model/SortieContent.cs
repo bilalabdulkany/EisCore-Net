@@ -8,7 +8,14 @@ namespace event_consumer_net.Application.Model
         public int MId { get; set; }
         public string CId { get; set; }
         public string Name { get; set; }
-        public DateTime EventTimestamp { get; set; }
+        public string EventTimestamp { get; set; }
         public List<CrEvents> CrEvents { get; set; }
+
+       
+
+        public override string ToString()
+        {
+            return MId+ " "+CId+" ::"+Name+ " ::" + EventTimestamp;
+        }
     }
 }

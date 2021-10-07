@@ -142,6 +142,7 @@ namespace EisCore.Infrastructure.Configuration
             request.NMSCorrelationID = Guid.NewGuid().ToString();
             // request.Properties["NMSXGroupID"] = "cheese";
             // request.Properties["myHeader"] = "Cheddar";
+
             return request;
         }
 
@@ -154,7 +155,16 @@ namespace EisCore.Infrastructure.Configuration
                 string jsonString = JsonSerializer.Serialize(eisEvent);
                 _MessagePublisher = CreatePublisher();
                 ITextMessage request = GetTextMessageRequest(jsonString);
+                /**
+                When the target server receives the message it will check if that property is set, if it is, then it will check in its in memory cache if it has already received a message with that value of the header.
+                 If it has received a message with the same value before then it will ignore the message.
+                **/
+                request.Properties["HDR_DUPLICATE_DETECTION_ID"] = eisEvent.EventID;//Duplicate message check on server's cache with Event ID. This is to prevent duplicate messages when broker is interrupted
                 _log.LogInformation("{s}", jsonString);
+                foreach (var item in request.Properties.Keys)
+                {
+                 _log.LogInformation("Properties:: {s}",item);    
+                }
                 _MessagePublisher.Send(request);
                 //TODO add the processed status
                 Console.WriteLine($"Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue exiting");
@@ -215,6 +225,7 @@ namespace EisCore.Infrastructure.Configuration
                     _log.LogInformation("consumer connection not started, starting");
                 }
                 var Queue = this._appSettings.InboundQueue;
+                _log.LogInformation("QUEUE:" + _appSettings);
                 var QueueDestination = SessionUtil.GetQueue(ConsumerTcpSession, Queue);
                 _log.LogInformation("Created MessageProducer for Destination Queue: {d}", QueueDestination);
                 _MessageConsumer = ConsumerTcpSession.CreateConsumer(QueueDestination);
@@ -252,7 +263,7 @@ namespace EisCore.Infrastructure.Configuration
                 {
                     _log.LogInformation("INBOX::NEW [Insert] status: {a}", recordInsertCount);
                     UtilityClass.ConsumeEvent(eisEvent, InboundQueue, _eventRegistry, _configManager.GetAppSettings().Name, _log);
-                    var updatedStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED);
+                    var updatedStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED,AtLeastOnceDeliveryDirection.IN);
                     _log.LogInformation("INBOX::NEW [Processed] status: {b}", updatedStatus);
                 }
                 else
@@ -266,7 +277,7 @@ namespace EisCore.Infrastructure.Configuration
             catch (Exception ex)
             {
                 receivedMsg.Acknowledge();
-                _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.FAILED);
+                _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.FAILED,AtLeastOnceDeliveryDirection.IN);
                 _log.LogError("exception in onMessage: {eisEvent}", ex.Message);
                 throw ex;
             }

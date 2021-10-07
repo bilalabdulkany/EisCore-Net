@@ -5,9 +5,12 @@ namespace event_consumer_net.Application.Model
     public class StaleEventCheck
     {
         
-          
+        public StaleEventCheck()
+        {
+            
+        }
 
-        public StaleEventCheck(string Id, int mId, string eventType, DateTime EventTimestamp)
+        public StaleEventCheck(string Id, int mId, string eventType, string EventTimestamp)
         {
             this.Id = Id;
             this.mId = mId;
@@ -20,6 +23,6 @@ namespace event_consumer_net.Application.Model
         public int mId{get;set;}
 
         public string EventType {get;set;}
-        public DateTime EventTimestamp {get;set;}
+        public string EventTimestamp {get;set;}
     }
 }
