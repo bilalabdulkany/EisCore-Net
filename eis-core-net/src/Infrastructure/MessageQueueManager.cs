@@ -35,14 +35,8 @@ namespace EisCore
             testHostIp = Guid.NewGuid().ToString();
             _dbContext.setHostIpAddress(testHostIp);
             //Check if any Message Processors are registered, then call the keep alive services
-
-           
-               ConsumerKeepAliveTask();
-           
+            ConsumerKeepAliveTask();
         }
-
-
-
         public Task InboxOutboxPollerTask()
         {
             if (GlobalVariables.IsCurrentIpLockedForConsumer)
@@ -63,11 +57,11 @@ namespace EisCore
         {
             return Task.Run(() =>
              {
-                 var recordUpdateStatus = 0;
-                 string _eventID = null;
                  List<EisEventInboxOutbox> inboxEventsList = _eventINOUTDbContext.GetAllUnprocessedEvents(AtLeastOnceDeliveryDirection.IN).Result;
                  if (inboxEventsList.Count > 0)
                  {
+                     var recordUpdateStatus = 0;
+                     string _eventID = null;
                      _log.LogInformation("INBOX: UnprocessedInboxEvents data are available: {c}", inboxEventsList.Count);
                      foreach (var events in inboxEventsList)
                      {
@@ -77,28 +71,20 @@ namespace EisCore
                              EisEventInboxOutbox dbEvents = events;
                              EisEvent eisEvent = JsonSerializer.Deserialize<EisEvent>(events.eisEvent);
                              _eventID = eisEvent.EventID;
-
-
                              this.ConsumeEvent(eisEvent, dbEvents.TopicQueueName);
-
-                             recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.PROCESSED,AtLeastOnceDeliveryDirection.IN).Result;
+                             recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.PROCESSED, AtLeastOnceDeliveryDirection.IN).Result;
                              _log.LogInformation("Processed {e}, with status {s}", _eventID.ToString(), recordUpdateStatus);
                          }
                          catch (Exception e)
                          {
                              _log.LogError("Exception occurred while processing > {e}", e.StackTrace);
-                             recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.FAILED,AtLeastOnceDeliveryDirection.IN).Result;
+                             recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.FAILED, AtLeastOnceDeliveryDirection.IN).Result;
                          }
                      }
                  }
                  else
                  {
                      GlobalVariables.IsUnprocessedInMessagePresent = false;
-                     //this.ConsumeEvent(eisEvent, dbEvents.TopicQueueName, _eventRegistry, sourceName);
-                     //_brokerConnectionFactory.CreateConsumerListener();
-                     //recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.PROCESSED).Result;
-                     //_log.LogInformation("Processed {e}, with status {s}", _eventID.ToString(), recordUpdateStatus);
-                     //TODO get current message which is received and process without the poller
                  }
              }
              );
@@ -108,12 +94,12 @@ namespace EisCore
         {
             return Task.Run(() =>
             {
-                var recordUpdateStatus = 0;
-                string _eventID = null;
                 //TODO check thread safety and use BlockingCollection<EisEventInboxOutbox> Collection
                 List<EisEventInboxOutbox> outboxEventsList = _eventINOUTDbContext.GetAllUnprocessedEvents(AtLeastOnceDeliveryDirection.OUT).Result;
                 if (outboxEventsList.Count > 0)
                 {
+                    var recordUpdateStatus = 0;
+                    string _eventID = null;
                     _log.LogInformation("OUTBOX: UnprocessedOutboxEvents data are available: {c}", outboxEventsList.Count);
 
                     foreach (var events in outboxEventsList)
@@ -125,16 +111,15 @@ namespace EisCore
                             EisEvent eisEvent = JsonSerializer.Deserialize<EisEvent>(events.eisEvent);
                             _eventID = eisEvent.EventID;
                             QueueToPublisherTopic(eisEvent, false);
-                            recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.PROCESSED,AtLeastOnceDeliveryDirection.OUT).Result;
+                            recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.PROCESSED, AtLeastOnceDeliveryDirection.OUT).Result;
                             _log.LogInformation("Processed {e}, with status {s}", _eventID.ToString(), recordUpdateStatus);
                         }
                         catch (Exception e)
                         {
                             _log.LogError("Exception occurred while processing > {e}", e.StackTrace);
-                            recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.FAILED,AtLeastOnceDeliveryDirection.OUT).Result;
+                            recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(_eventID, TestSystemVariables.FAILED, AtLeastOnceDeliveryDirection.OUT).Result;
                         }
                     }
-
                 }
                 else
                 {
@@ -157,9 +142,8 @@ namespace EisCore
                     _log.LogInformation("OUTBOX::NEW [Insert] status: {a}", recordInsertCount);
                     //Console.WriteLine($"publish Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue called");
                     _brokerConnectionFactory.QueueToPublisherTopic(eisEvent);
-                    var recordUpdateStatus1 = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED,AtLeastOnceDeliveryDirection.OUT).Result;
+                    var recordUpdateStatus1 = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED, AtLeastOnceDeliveryDirection.OUT).Result;
                     _log.LogInformation("OUTBOX::Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus1);
-
                 }
                 else
                 {
@@ -170,40 +154,18 @@ namespace EisCore
             if (!isCurrent)//First publish the messages in OUTBOX queue if not empty
             {
                 _brokerConnectionFactory.QueueToPublisherTopic(eisEvent);
-                var recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED,AtLeastOnceDeliveryDirection.OUT).Result;
+                var recordUpdateStatus = _eventINOUTDbContext.UpdateEventStatus(eisEvent.EventID, TestSystemVariables.PROCESSED, AtLeastOnceDeliveryDirection.OUT).Result;
                 _log.LogInformation("OUTBOX::TIMER::Processed {e}, with status {s}", eisEvent.EventID.ToString(), recordUpdateStatus);
             }
             //If it is coming from timer, isCurrent=false, and GlobalVariables.IsUnprocessedOutMessagePresent is true -- do nothing - let the 
         }
-
         public void ConsumeEvent(EisEvent eisEvent, string queueName)
         {
-
             UtilityClass.ConsumeEvent(eisEvent, queueName, _eventRegistry, sourceName, _log);
-            /*IMessageProcessor messageProcessor = _eventRegistry.GetMessageProcessor();
-            if (messageProcessor == null)
-            {
-                _log.LogError("{app}: No message handler found for the event ID {id} in queue {queue}", sourceName, eisEvent.EventID, queueName);
-                throw new Exception("No MessageProcessor found for the queue");
-            }
-            try
-            {
-                _log.LogInformation("{app}: message with event {event} received", sourceName, eisEvent);
-                messageProcessor.Process(eisEvent.Payload, eisEvent.EventType);
-            }
-            catch (Exception e)
-            {
-                _log.LogError("{app}: Processing of message with id {id} failed with error {er}", sourceName, eisEvent.EventID, e.Message);
-                throw new Exception($"Processing event with ID > {eisEvent.EventID} failed > {e.Message}");
-            }*/
         }
-
-
-
         public async Task ConsumerKeepAliveTask()
-        {            
+        {
             await Console.Out.WriteLineAsync("#########Consumer Connection Quartz Job... Cron: [" + _configManager.GetBrokerConfiguration().CronExpression + "]");
-
             var eisGroupKey = _configManager.GetSourceSystemName() + "_COMPETING_CONSUMER_GROUP";
             var refreshInterval = _configManager.GetBrokerConfiguration().RefreshInterval;
 
@@ -234,12 +196,18 @@ namespace EisCore
                             GlobalVariables.IsCurrentIpLockedForConsumer = false;
                         }
                         else
-                        {
-                            //bool canStart=GlobalVariables.IsCurrentIpLockedForConsumer&&!GlobalVariables.IsTransportInterrupted;
+                        {                            
                             _brokerConnectionFactory.CreateConsumerListener();
-                            var keepAliveResult = _dbContext.KeepAliveEntry(true, eisGroupKey);
-                            _log.LogInformation("***Refreshing Keep Alive entry {k}", keepAliveResult.Result);
-                            GlobalVariables.IsCurrentIpLockedForConsumer = true;
+                            if (!GlobalVariables.IsTransportInterrupted)
+                            {
+                                var keepAliveResult = _dbContext.KeepAliveEntry(true, eisGroupKey);
+                                _log.LogInformation("***Refreshing Keep Alive entry {k}", keepAliveResult.Result);
+                                GlobalVariables.IsCurrentIpLockedForConsumer = true;
+                            }
+                            else
+                            {
+                                _log.LogCritical("Broker is down. Connection Interrupted");
+                            }
                         }
                     }
                     else
@@ -260,15 +228,11 @@ namespace EisCore
             await Console.Out.WriteLineAsync("exception when creating consumer");
             return;
         }
-
         private bool IsIPAddressMatchesWithGroupEntry(string ipAddress)
         {
             return ipAddress.Equals(testHostIp);
             //TODO revert after testing
-            //return ipAddress.Equals(UtilityClass.GetLocalIpAddress());           
-
-
+            //return ipAddress.Equals(UtilityClass.GetLocalIpAddress());    
         }
-
     }
 }

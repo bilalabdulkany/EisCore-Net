@@ -23,7 +23,7 @@ namespace EisCore.Infrastructure.Persistence
         {
             this._configuration = configuration;
             this._eventINOUTDbContext = eventINOUTDbContext;
-            _databaseName = this._configuration["DatabaseSource"];
+            _databaseName = this._configuration.GetConnectionString("DefaultConnection");
             Setup();
             InitiateUnprocessedINOUTMessages();
         }

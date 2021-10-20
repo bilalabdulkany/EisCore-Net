@@ -52,6 +52,7 @@ namespace event_consumer_net
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "event_consumer_net v1"));
+                
             }
 
             app.UseRouting();

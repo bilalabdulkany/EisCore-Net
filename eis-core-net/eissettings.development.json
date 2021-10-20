@@ -16,7 +16,7 @@
     {
       "Name":"MDM",      
       "OutboundTopic": "topic.outbound.mdm",
-      "InboundQueue": "queue.inbound.flying.activity"
+      "InboundQueue": "queue.inbound.mdm"
     }
   ]
   

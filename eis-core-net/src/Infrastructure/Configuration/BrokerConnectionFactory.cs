@@ -54,8 +54,6 @@ namespace EisCore.Infrastructure.Configuration
             _connecturi = new Uri(brokerUrl);
             IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(_connecturi);
 
-
-
             _factory = factory;
             _eventINOUTDbContext = eventINOUTDbContext;
             _ConsumerConnection = null;
@@ -183,18 +181,7 @@ namespace EisCore.Infrastructure.Configuration
         public void CreateConsumerListener()
         {
             try
-            {
-                // if (_ConsumerConnection != null && _ConsumerConnection.IsStarted)
-                // {
-                //     _log.LogInformation("returning existing broker connection in create consumer");
-                //     return;
-                // }
-                // if (_ConsumerConnection != null)
-                // {
-                //     _log.LogInformation("_ConsumerConnection.IsStarted: " + _ConsumerConnection.IsStarted);
-                //    DestroyConsumerConnection();
-                //     _log.LogInformation("_ConsumerConnection Stopped");
-                // }
+            {               
                 _log.LogInformation("CreateConsumer _ConsumerConnection: >> " + _ConsumerConnection + " <<");
                 if (_ConsumerConnection != null)
                 {
@@ -211,25 +198,42 @@ namespace EisCore.Infrastructure.Configuration
                 _ConsumerConnection.ConnectionInterruptedListener += interruptedListener;
                 //_ConsumerConnection.ConnectionResumedListener += connectionResumedListener;
                 _ConsumerConnection.ExceptionListener += connectionExceptionListener;
-
-                var ConsumerTcpSession = _ConsumerConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
-
+                 _log.LogInformation("Creating session"); 
+                 ISession ConsumerTcpSession =null; 
+                // https://stackoverflow.com/questions/4303075/activemq-starting-consumer-without-broker
+                Task.Run(()=>{
+                 ConsumerTcpSession = _ConsumerConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
+                _log.LogInformation("Consumer Connection going to start:");                                
                 _ConsumerConnection.Start();
-                GlobalVariables.IsTransportInterrupted = false;
+                _log.LogInformation("start connection");
+               
+               
                 if (_ConsumerConnection.IsStarted)
                 {
                     _log.LogInformation("consumer connection started");
+                     GlobalVariables.IsTransportInterrupted = false;
                 }
                 else
                 {
                     _log.LogInformation("consumer connection not started, starting");
                 }
+                 
+                 if(ConsumerTcpSession!=null){
+
                 var Queue = this._appSettings.InboundQueue;
                 _log.LogInformation("QUEUE:" + _appSettings);
                 var QueueDestination = SessionUtil.GetQueue(ConsumerTcpSession, Queue);
                 _log.LogInformation("Created MessageProducer for Destination Queue: {d}", QueueDestination);
-                _MessageConsumer = ConsumerTcpSession.CreateConsumer(QueueDestination);
+                _MessageConsumer = ConsumerTcpSession.CreateConsumer(QueueDestination);                
+                 GlobalVariables.IsTransportInterrupted = false;
                 _MessageConsumer.Listener += new MessageListener(OnMessage);
+                 } 
+               
+                 else {
+                     _log.LogInformation("Consumer connection not started");
+                 }
+                   });
+                
             }
             catch (Exception e)
             {

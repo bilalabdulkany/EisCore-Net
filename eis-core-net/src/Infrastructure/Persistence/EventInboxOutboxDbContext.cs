@@ -24,7 +24,7 @@ namespace EisCore.Infrastructure.Persistence
         {
             this._log = log;
             this._configuration = configuration;
-            _databaseName = this._configuration["DatabaseSource"];
+            _databaseName = this._configuration.GetConnectionString("DefaultConnection");
             if (_databaseName == null)
             {
                 _databaseName = "Data Source=TestCore.sqlite";

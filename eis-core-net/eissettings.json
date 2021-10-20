@@ -2,8 +2,7 @@
     "BrokerConfiguration": {     
         "protocol": "failover:(tcp://",
         "url": "localhost:61616)",
-        "username": "admin",
-        "password": "admin",
+        "username": "admin",       
         "CronExpression":"0/20 * 1/1 ? * *",
         "RefreshInterval": 1
     },

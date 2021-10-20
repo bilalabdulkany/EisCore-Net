@@ -24,7 +24,7 @@ namespace EisCore.Infrastructure.Persistence
         {
             this._log = log;
             this._configuration = configuration;
-            _databaseName = this._configuration["DatabaseSource"];
+            _databaseName = this._configuration.GetConnectionString("DefaultConnection");
             if (_databaseName == null)
             {
                 _databaseName = "Data Source=TestCore.sqlite";
@@ -106,7 +106,7 @@ namespace EisCore.Infrastructure.Persistence
                 try
                 {
                     string sql = "DELETE FROM EIS_COMPETING_CONSUMER_GROUP WHERE  " +
-                    "EXTRACT(MINUTE FROM (CURRENT_TIMESTAMP - LAST_ACCESSED_TIMESTAMP))<=@eisGroupRefreshInterval " +
+                    "EXTRACT(MINUTE FROM (CURRENT_TIMESTAMP - LAST_ACCESSED_TIMESTAMP))>@eisGroupRefreshInterval " +
                     "AND GROUP_KEY=@eisGroupKey";
 
                     string sqlite = "DELETE FROM EIS_COMPETING_CONSUMER_GROUP WHERE  " +
