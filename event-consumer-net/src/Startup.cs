@@ -36,12 +36,11 @@ namespace event_consumer_net
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "event_consumer_net", Version = "v1" });
-            });
-            EisStartup.ConfigureServices(services, this.Configuration);
+            });           
             services.AddScoped<IMessageProcessor, EventMessageProcessor>();
             services.AddSingleton<IIdempotentEventCheckDbContext,IdempotentEventCheckDbContext>();
             services.AddSingleton<IStaleEventCheckDbContext,StaleEventCheckDbContext>();
-
+            services.AddEisServices();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -51,8 +50,7 @@ namespace event_consumer_net
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "event_consumer_net v1"));
-                
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "event_consumer_net v1"));                
             }
 
             app.UseRouting();
@@ -63,8 +61,8 @@ namespace event_consumer_net
             {
                 endpoints.MapControllers();
             });
-            app.ApplicationServices.GetService<IMessageQueueManager>();
-            app.ApplicationServices.GetService<IDatabaseBootstrap>();
+            app.ApplicationServices.GetRequiredService<IMessageQueueManager>();
+            app.ApplicationServices.GetRequiredService<IDatabaseBootstrap>();
             EventMessageProcessor eventProcessor = null;
             // get scoped factory
             var scopedFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();

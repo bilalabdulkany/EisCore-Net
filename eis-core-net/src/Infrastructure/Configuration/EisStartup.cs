@@ -14,7 +14,7 @@ namespace EisCore.Infrastructure.Configuration
     public static class EisStartup
     {
 
-        public static void ConfigureServices(IServiceCollection services, IConfiguration Configuration)
+        public static IServiceCollection AddEisServices(this IServiceCollection services)
         {
             services.AddSingleton<IConfigurationManager, ConfigurationManager>();
             services.AddSingleton<IEventInboxOutboxDbContext, EventInboxOutboxDbContext>();
@@ -51,7 +51,7 @@ namespace EisCore.Infrastructure.Configuration
             services.AddSingleton<InboxOutboxPollerJob>();
             services.AddSingleton<IJobSchedule, ConsumerKeepAliveJobSchedule>();
             services.AddSingleton<IJobSchedule, InboxOutboxPollerJobSchedule>();
-
+            return services;
             //new JobSchedule( jobType: typeof(QuartzKeepAliveEntryJob),cronExpression:"0/20 * * * * ?")
             //);// run every {n} seconds
 
