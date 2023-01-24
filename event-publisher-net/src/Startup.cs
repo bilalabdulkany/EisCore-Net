@@ -37,7 +37,7 @@ namespace event_publisher_net
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "event_publisher_net", Version = "v1" });
             });
 
-            EisStartup.ConfigureServices(services, this.Configuration);
+            EisStartup.AddEisServices(services);
            // services.AddScoped<IMessageProcessor, EventMessageProcessor>();
 
         }
@@ -60,6 +60,7 @@ namespace event_publisher_net
             {
                 endpoints.MapControllers();
             });
+            
 
            // app.ApplicationServices.GetService<IConfigurationManager>();
             app.ApplicationServices.GetService<IMessageQueueManager>();

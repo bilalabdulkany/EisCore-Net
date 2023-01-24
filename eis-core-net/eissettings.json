@@ -1,8 +1,9 @@
 {
     "BrokerConfiguration": {     
-        "protocol": "failover:(tcp://",
-        "url": "localhost:61616)",
-        "username": "admin",       
+        "protocol": "failover:(amqp://",
+        "url": "localhost:5672)",
+        "username": "admin",     
+        "password":"admin",  
         "CronExpression":"0/20 * 1/1 ? * *",
         "RefreshInterval": 1
     },

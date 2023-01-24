@@ -7,7 +7,7 @@ namespace EisCore.Application.Interfaces
 {
     public interface IBrokerConnectionFactory : IDisposable
     {      
-        IMessageProducer CreatePublisher();       
+       
         void CreateConsumerListener();
         void DestroyConsumerConnection();
         void QueueToPublisherTopic(EisEvent eisEvent);

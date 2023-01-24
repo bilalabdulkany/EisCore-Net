@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Apache.NMS;
+using Apache.NMS.AMQP;
 using Apache.NMS.ActiveMQ;
 using Apache.NMS.ActiveMQ.Transport;
 using Apache.NMS.Util;
@@ -52,7 +53,7 @@ namespace EisCore.Infrastructure.Configuration
             _log.LogInformation("BrokerConnectionFactory >> Initializing broker connections.");
             _log.LogInformation("Broker - {brokerUrl}", brokerUrl);
             _connecturi = new Uri(brokerUrl);
-            IConnectionFactory factory = new Apache.NMS.ActiveMQ.ConnectionFactory(_connecturi);
+            IConnectionFactory factory = new Apache.NMS.AMQP.ConnectionFactory(_connecturi);
 
             _factory = factory;
             _eventINOUTDbContext = eventINOUTDbContext;
@@ -65,84 +66,7 @@ namespace EisCore.Infrastructure.Configuration
             //CreateProducerConnection();
 
         }
-        private void CreatePublisherConnection()
-        {
-            // IConnection _PublisherConnection = null;
-            try
-            {
-                _PublisherConnection = _factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
-                //ProducerTcpConnection.ClientId = "Producer_Connection";
-
-                if (_PublisherConnection.IsStarted)
-                {
-                    _log.LogInformation("producer and consumer connection started");
-                }
-
-                _PublisherSession = _PublisherConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
-
-                _log.LogInformation("##Created Publisher connection {con}", this._PublisherConnection.ToString());
-            }
-            catch (Apache.NMS.ActiveMQ.ConnectionClosedException e1)
-            {
-                _log.LogCritical("Connection closed exception thrown while closing a connection. {e1}", e1.StackTrace);
-                try
-                {
-                    _log.LogCritical("Stopping Connection..");
-                    _PublisherConnection.Stop();
-                }
-                catch (Apache.NMS.ActiveMQ.ConnectionClosedException e2)
-                {
-                    _log.LogCritical("Cannot close the connection {e2}", e2.StackTrace);
-                    _PublisherConnection.Close();
-                }
-                finally
-                {
-                    _PublisherConnection.Dispose();
-                }
-            }
-            catch (Exception e)
-            {
-                _log.LogError("Exception occurred {class}: {e}", this.ToString(), e.StackTrace);
-            }
-        }
-        public IMessageProducer CreatePublisher()
-        {
-            try
-            {
-                if (_MessagePublisher != null)
-                {
-                    return _MessagePublisher;
-                }
-                CreatePublisherConnection();
-                var topic = _configManager.GetAppSettings().OutboundTopic;
-                var TopicDestination = SessionUtil.GetTopic(_PublisherSession, topic);
-                _PublisherConnection.Start();
-                if (_PublisherConnection.IsStarted)
-                {
-                    _log.LogInformation("connection started");
-                }
-                _MessagePublisher = _PublisherSession.CreateProducer(TopicDestination);
-                _MessagePublisher.DeliveryMode = MsgDeliveryMode.Persistent;
-                _MessagePublisher.RequestTimeout = receiveTimeout;
-                _log.LogInformation("Created MessageProducer for Destination Topic: {d}", TopicDestination);
-                return _MessagePublisher;
-            }
-            catch (Exception e)
-            {
-                _log.LogCritical("Error occurred while creating producer: " + e.StackTrace);
-                DestroyProducerConnection();
-                throw e;
-            }
-        }
-        private ITextMessage GetTextMessageRequest(string message)
-        {
-            ITextMessage request = _PublisherSession.CreateTextMessage(message);
-            request.NMSCorrelationID = Guid.NewGuid().ToString();
-            // request.Properties["NMSXGroupID"] = "cheese";
-            // request.Properties["myHeader"] = "Cheddar";
-
-            return request;
-        }
+     
 
         public void QueueToPublisherTopic(EisEvent eisEvent)
         {
@@ -151,13 +75,43 @@ namespace EisCore.Infrastructure.Configuration
             try
             {
                 string jsonString = JsonSerializer.Serialize(eisEvent);
-                _MessagePublisher = CreatePublisher();
-                ITextMessage request = GetTextMessageRequest(jsonString);
+                   IConnectionFactory factory = new Apache.NMS.AMQP.ConnectionFactory(_configManager.GetBrokerUrl());
+                 
+                _PublisherConnection = factory.CreateConnection(this._brokerConfiguration.Username, this._brokerConfiguration.Password);
+                //ProducerTcpConnection.ClientId = "Producer_Connection";
+
+                if (_PublisherConnection.IsStarted)
+                {
+                    _log.LogInformation("producer and consumer connection started");
+                }
+                
+
+                var session = _PublisherConnection.CreateSession(AcknowledgementMode.ClientAcknowledge);
+
+                   var topic =_configManager.GetAppSettings().OutboundTopic;
+
+
+                var TopicDestination = SessionUtil.GetTopic(session, topic);                   
+                
+                _log.LogInformation("Topic or QUEUE?, GetQueue->IsTopic:{f} Q:{b}",TopicDestination.IsTopic,TopicDestination.IsQueue);
+                _log.LogInformation("Topic or QUEUE?, GetTopic->IsTopic T:{f} IsQueue Q:{b}",SessionUtil.GetTopic(session,topic).IsTopic, SessionUtil.GetTopic(session,topic).IsQueue);
+                    
+                 _PublisherConnection.Start();
+                if (_PublisherConnection.IsStarted)
+                {
+                    _log.LogInformation("connection started");
+                }
+                 _log.LogInformation("Created MessageProducer for Destination Topic: {d}", TopicDestination);
+                _MessagePublisher = session.CreateProducer(TopicDestination);
+                _MessagePublisher.DeliveryMode = MsgDeliveryMode.Persistent;
+                _MessagePublisher.RequestTimeout = receiveTimeout;
+                
+                ITextMessage request = session.CreateTextMessage(jsonString);
                 /**
                 When the target server receives the message it will check if that property is set, if it is, then it will check in its in memory cache if it has already received a message with that value of the header.
                  If it has received a message with the same value before then it will ignore the message.
                 **/
-                request.Properties["HDR_DUPLICATE_DETECTION_ID"] = eisEvent.EventID;//Duplicate message check on server's cache with Event ID. This is to prevent duplicate messages when broker is interrupted
+              //  request.Properties["HDR_DUPLICATE_DETECTION_ID"] = eisEvent.EventID;//Duplicate message check on server's cache with Event ID. This is to prevent duplicate messages when broker is interrupted
                 _log.LogInformation("{s}", jsonString);
                 foreach (var item in request.Properties.Keys)
                 {
@@ -173,7 +127,7 @@ namespace EisCore.Infrastructure.Configuration
             }
             catch (Exception e)
             {
-                _log.LogInformation("{s}", e.StackTrace);
+                _log.LogInformation("Error occurred: {e}", e.StackTrace);
             }
 
         }

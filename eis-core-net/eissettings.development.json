@@ -1,7 +1,7 @@
 {
   "BrokerConfiguration": {     
-      "protocol": "failover:(tcp://",
-      "url": "localhost:61616)",
+      "protocol": "failover:(amqp://",
+      "url": "localhost:5672)",
       "username": "admin",
       "password": "admin",
       "CronExpression":"0/20 * 1/1 ? * *",
@@ -11,7 +11,7 @@
     "ApplicationSettings": [{
       "Name":"FLYING_PROCESS",      
       "OutboundTopic": "topic.outbound.flying.activity",
-      "InboundQueue": "queue.inbound.mdm"
+      "InboundQueue": "queue.inbound.flying.activity"
     },
     {
       "Name":"MDM",      

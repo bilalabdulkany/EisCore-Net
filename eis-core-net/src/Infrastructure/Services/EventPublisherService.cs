@@ -43,7 +43,7 @@ namespace EisCore
                 _log.LogInformation("sending object");
                 EisEvent eisEvent = this.getEisEvent(messageObject);
                 Console.WriteLine($"publish Thread={Thread.CurrentThread.ManagedThreadId} SendToQueue called");
-                Task.Run(() => _messageQueueManager.QueueToPublisherTopic(eisEvent, true));//Execute method in separate thread
+                _messageQueueManager.QueueToPublisherTopic(eisEvent, true);//Execute method in separate thread
 
             }
 
